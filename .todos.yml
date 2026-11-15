@@ -1,5 +1,5 @@
 schema_version: '1.0'
-updated_at: '2026-11-15T00:22:48Z'
+updated_at: '2026-11-15T00:24:00Z'
 next_task_number: 16
 tasks:
 - id: TASK-001
@@ -188,8 +188,11 @@ tasks:
   acceptance_criteria:
   - 项目检查通过并上传 agent-workflow
   - think-then-verify 与 clear-expression 已归档
-  status: working
+  status: done
   created_at: '2026-11-15T00:22:19Z'
-  updated_at: '2026-11-15T00:22:19Z'
+  updated_at: '2026-11-15T00:24:00Z'
   executor: conversation-9bcdcba9
   started_at: '2026-11-15T00:22:19Z'
+  verification:
+  - agent-workflow 已上传私有 main；think-then-verify 与 clear-expression 均已核验归档
+  completed_at: '2026-11-15T00:24:00Z'
