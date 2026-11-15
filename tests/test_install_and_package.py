@@ -14,6 +14,7 @@ INSTALLER = SCRIPTS / "install_links.py"
 sys.path.insert(0, str(SCRIPTS))
 
 from check_doc_forest import validate_config
+from session_questions import validate_document as validate_questions_document
 from state_files import validate_requirements_data, validate_todos_data
 from yaml_common import load_yaml
 
@@ -110,6 +111,11 @@ class PackageTests(unittest.TestCase):
             validate_requirements_data(load_yaml(SKILL / "assets" / "requirements.yml")),
             [],
         )
+        self.assertEqual(
+            validate_questions_document(SKILL / "assets" / "questions.yml", load_yaml(SKILL / "assets" / "questions.yml")),
+            [],
+        )
+        self.assertTrue((SCRIPTS / "install.py").is_file())
         info = load_yaml(SKILL / "assets" / "info.yml")
         self.assertEqual(info["schema_version"], "1.0")
         self.assertEqual(set(info), {"schema_version", "purpose", "contents_summary"})

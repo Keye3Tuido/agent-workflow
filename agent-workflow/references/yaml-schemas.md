@@ -8,6 +8,7 @@
 4. `requirements.yml`
 5. `.todos.yml`
 6. 状态脚本命令
+7. `questions.yml`
 
 ## 1. 通用规则
 
@@ -173,3 +174,40 @@ python3 scripts/state_files.py todos validate --file <文件>
 ```
 
 失败时不替换原文件。成功返回 `0`，校验或状态问题返回 `1`，参数或运行错误返回 `2`。
+
+
+## 7. `questions.yml`
+
+```yaml
+schema_version: "1.0"
+session:
+  id: "SESSION_ID"
+  project_root: "/absolute/project/root"
+  created_at: "2026-11-16T00:00:00Z"
+  updated_at: "2026-11-16T00:00:00Z"
+next_question_number: 2
+questions:
+  - id: "Q-001"
+    question: "需要用户确认的问题"
+    reason: "该答案影响目标、权限、安全或结果正确性"
+    status: "open"
+    created_at: "2026-11-16T00:00:00Z"
+    updated_at: "2026-11-16T00:00:00Z"
+    context: "可选的最少必要背景"
+    requirement_ids:
+      - "REQ-001"
+```
+
+- 文件必须位于项目外的当前会话目录。ID 使用 `Q-001` 形式，编号由 `next_question_number` 保存且不复用。
+- `question`、`reason` 和状态时间字段必填；`context`、`requirement_ids` 仅在有助于理解或关联要求时添加。
+- 状态只能 `open → answered` 或 `open → cancelled`。`answered` 必须有 `answer` 和 `answered_at`；`cancelled` 必须有 `cancelled_at`；不属于当前状态的字段省略。
+- 只记录当前决定所需的问题、背景与回答，不保存隐藏思维、凭证或无关聊天。问题文件不单独生成审计日志。
+
+```bash
+python3 scripts/session_questions.py init --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录>
+python3 scripts/session_questions.py ask --file <文件> --session-id <ID> --project-root <根目录> --question <问题> --reason <原因> [--context <背景>] [--requirement-id <REQ-ID>]
+python3 scripts/session_questions.py answer --file <文件> --session-id <ID> --project-root <根目录> --id <Q-ID> --answer <回答>
+python3 scripts/session_questions.py cancel --file <文件> --session-id <ID> --project-root <根目录> --id <Q-ID>
+python3 scripts/session_questions.py list --file <文件> [--status open]
+python3 scripts/session_questions.py validate --file <文件>
+```

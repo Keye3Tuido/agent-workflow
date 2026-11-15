@@ -22,8 +22,8 @@ class UpdateTests(unittest.TestCase):
         (self.installed / "SKILL.md").write_text("old\n", encoding="utf-8")
         self.release = {
             "version": "v1.0.0",
-            "asset_url": "https://github.com/Keye3Tuido/agent-workflow/releases/download/v1.0.0/agent-workflow.skill",
-            "release_url": "https://github.com/Keye3Tuido/agent-workflow/releases/tag/v1.0.0",
+            "asset_url": "https://github.com/Keye3Tuido/lucid-workflow/releases/download/v1.0.0/agent-workflow.skill",
+            "release_url": "https://github.com/Keye3Tuido/lucid-workflow/releases/tag/v1.0.0",
         }
 
     def tearDown(self):

@@ -1,5 +1,5 @@
 <!-- agent-workflow:start -->
-# Agent workflow：要求、任务与文档森林
+# Lucid Workflow：要求、提问、任务与文档森林
 
 保持用户目标、明确要求、实际证据和待办。用户指令及宿主高优先级规则优先；本区块不扩大授权。
 
@@ -10,19 +10,21 @@
 | Agent 自有全局目录 | 宿主指导入口、Skill 链接和专属配置 |
 | Agent 共享全局目录 | 权威 `AGENTS.md` 和 `skills/agent-workflow/` |
 | 项目根目录 | 项目 `AGENTS.md`、`.doc-forest.yml`、`.doc-forest/`、`.todos.yml`、`.agent-workflow-audit.jsonl` |
-| 会话目录 | 当前会话的 `requirements.yml`、`requirements-audit.jsonl` 和运行状态 |
+| 会话目录 | 当前会话的 `requirements.yml`、`questions.yml`、对应审计和运行状态 |
 
 ```text
 macOS／Linux：
 $HOME/.agents/AGENTS.md
 $HOME/.agents/skills/agent-workflow/
 $HOME/.local/state/agent-workflow/<session-id>/requirements.yml
+$HOME/.local/state/agent-workflow/<session-id>/questions.yml
 $HOME/.local/state/agent-workflow/<session-id>/requirements-audit.jsonl
 
 Windows：
 %USERPROFILE%\.agents\AGENTS.md
 %USERPROFILE%\.agents\skills\agent-workflow\
 %LOCALAPPDATA%\agent-workflow\<session-id>\requirements.yml
+%LOCALAPPDATA%\agent-workflow\<session-id>\questions.yml
 %LOCALAPPDATA%\agent-workflow\<session-id>\requirements-audit.jsonl
 
 ```
@@ -40,7 +42,7 @@ Windows：
 
 ## 会话开始检查更新
 
-宿主加载本规则后、实质工作前，查询 `https://github.com/Keye3Tuido/agent-workflow/releases/latest`：
+宿主加载本规则后、实质工作前，查询 `https://github.com/Keye3Tuido/lucid-workflow/releases/latest`：
 
 ```bash
 python3 <共享Skill>/scripts/update_skill.py check
@@ -50,10 +52,22 @@ python3 <共享Skill>/scripts/update_skill.py check
 
 ## 每轮维护要求
 
-1. 收到消息后、实质处理前读取 `requirements.yml`。使用宿主会话目录或 `AGENT_WORKFLOW_SESSION_DIR`，核对会话 ID 和项目根目录。
+1. 收到消息后、实质处理前读取 `requirements.yml` 和 `questions.yml`。使用宿主会话目录或 `AGENT_WORKFLOW_SESSION_DIR`，核对会话 ID 和项目根目录。
 2. 记录明确要求、禁止项、修改和取消内容。取消或到期即删除，ID 不复用；临时要求注明范围和失效条件。建议不得冒充用户要求。
 3. 文件只存项目外的当前会话目录，并在会话中提供入口。没有可用目录时说明缺口，不得写入项目。
 4. 答复前复核要求与实际行为；先修正，无法满足则说明要求、原因和缺口。只留本轮结果，不存隐藏思维、凭证或无关聊天。
+
+## 不确定时先问
+
+能通过源码、文档或工具核验的问题先自行核验。只有缺口会影响目标、权限、安全或结果正确性时才询问用户，不替用户猜测。一次只问一个关键问题，提供建议或明确选项；不受影响的工作继续执行。
+
+提问前把问题、原因和必要上下文写入会话 `questions.yml`，回答后及时记录，取消的问题不再阻塞。恢复会话时先读 open 问题，已回答的问题不重复询问。只保存当前决定所需内容，不保存隐藏思维。
+
+```bash
+python3 <共享Skill>/scripts/session_questions.py ask --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录> --question <问题> --reason <需要用户决定的原因>
+python3 <共享Skill>/scripts/session_questions.py answer --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录> --id <Q-ID> --answer <回答>
+python3 <共享Skill>/scripts/session_questions.py list --file <会话目录/questions.yml> --status open
+```
 
 ## 维护任务
 

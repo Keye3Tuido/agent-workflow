@@ -18,7 +18,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 
-REPOSITORY = "Keye3Tuido/agent-workflow"
+REPOSITORY = "Keye3Tuido/lucid-workflow"
 RELEASE_API = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
 ASSET_NAME = "agent-workflow.skill"
 MAX_PACKAGE_BYTES = 20 * 1024 * 1024

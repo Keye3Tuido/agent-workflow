@@ -80,6 +80,7 @@ python3 /absolute/unpacked/agent-workflow/scripts/install_links.py \
 | `.todos.yml` | 使用共享任务时保留，保存任务状态和下一编号；所有写入经状态脚本加锁、校验和原子替换 | `clean-accepted` 只删除已验收条目及其已满足依赖，不删除文件或编号；取消的任务按命令删除 |
 | `.agent-workflow-audit.jsonl` | 位于项目根目录的项目协调审计；超过 100 个完整操作时清理到最近 50 个 | 每次成功或失败后检查水位并自动淘汰旧操作；`git commit` 和 `clean-accepted` 不额外清空。不再需要时由用户明确删除；后续状态写入会重新生成 |
 | 会话目录的 `requirements.yml` | 位于项目外，保存当前会话有效要求；每轮核对并删除取消或到期条目 | 会话结束且不再需要恢复时删除，不进入项目或提交 |
+| 会话目录的 `questions.yml` | 位于项目外，保存需要用户决定的问题、必要上下文、回答和状态 | 问题取消或回答后保留近期决定；会话结束且不再需要恢复时删除，不进入项目或提交 |
 | 会话目录的 `requirements-audit.jsonl` | 位于项目外；超过 100 个要求操作时清理到最近 50 个 | 每次成功或失败后检查水位并自动淘汰旧操作；会话结束且不再需要追溯时与要求文件一并删除 |
 | `.doc-forest.yml`、`.doc-forest/` | 启用森林的目标项目保留，保存导航配置和人工维护的摘要；项目写入前后检查并更新 | 它们不是缓存。停用森林时明确删除；只清理缓存不会清理森林 |
 | `.cache/agent-workflow/` | 派生 SQLite 缓存，可按需重建，不作为事实来源 | 可随时删除，不纳入提交；再次检索时自动重建 |
@@ -87,8 +88,8 @@ python3 /absolute/unpacked/agent-workflow/scripts/install_links.py \
 | `dist/*.skill` | 从 Skill 源码生成的分发资产，发布前重新构建并验证 | 可删除后重新生成，不属于协调状态 |
 | 临时目录、`__pycache__`、`*.pyc`、`.DS_Store` | 测试或运行产生的临时内容 | 不纳入提交，确认无使用后删除 |
 
-### `agent-workflow` 源仓库自身
+### Lucid Workflow 源仓库自身
 
-源仓库只保存产品、测试和发布资产：`agent-workflow/`、`tests/`、`LICENSE` 和 `dist/`。权威指导模板是 `agent-workflow/assets/AGENTS.template.md`，仓库内任何位置都不得保留会自动加载的 `AGENTS.md`。
+源仓库只保存产品、测试、项目说明和发布资产：`agent-workflow/`、`tests/`、`README.md`、`LICENSE` 和 `dist/`。权威指导模板是 `agent-workflow/assets/AGENTS.template.md`，仓库内任何位置都不得保留会自动加载的 `AGENTS.md`。
 
 源仓库自身不创建或提交 `.todos.yml`、`.agent-workflow-audit.jsonl`、`.doc-forest.yml`、`.doc-forest/` 或任何目录的 `AGENTS.md`，不得对本仓库运行工作流初始化或状态写入。检查和协同测试使用临时项目夹具，不对源仓库生成这些文件。

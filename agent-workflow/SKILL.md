@@ -1,9 +1,9 @@
 ---
 name: agent-workflow
-description: Maintain session requirements, project todos, and .doc-forest summaries; locate task-relevant files and lines. Use for AGENTS.md rules, session recovery, project-write checks, context discovery, summary writing, pre-commit cleanup, global paths, and shared Skill links.
+description: Maintain session requirements, user questions, project todos, and .doc-forest summaries; locate task-relevant files and lines. Use for AGENTS.md rules, uncertainty questions, session recovery, project-write checks, context discovery, pre-commit cleanup, and one-command installation.
 ---
 
-# Agent workflow
+# Lucid Workflow
 
 常驻 `AGENTS.md` 保存规则；本 Skill 提供操作。脚本检查结构和定位证据，AI 核验语义。不使用 Hook，不区分主、子 Agent 权限。
 
@@ -17,20 +17,34 @@ description: Maintain session requirements, project todos, and .doc-forest summa
 python3 <共享Skill>/scripts/update_skill.py check
 ```
 
-固定查询 `https://github.com/Keye3Tuido/agent-workflow/releases/latest`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。更新后重新加载 Skill。Skill 更新不自动覆盖共享 `AGENTS.md`，模板变化须按宿主规则复核接入。查询优先使用已登录的 `gh`，无 `gh` 时使用公开 API；失败时使用当前版本并报告，不重复请求。
+固定查询 `https://github.com/Keye3Tuido/lucid-workflow/releases/latest`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。更新后重新加载 Skill。Skill 更新不自动覆盖共享 `AGENTS.md`，模板变化须按宿主规则复核接入。查询优先使用已登录的 `gh`，无 `gh` 时使用公开 API；失败时使用当前版本并报告，不重复请求。
 
 ## 恢复状态
 
-1. 实质处理前读取会话目录或 `AGENT_WORKFLOW_SESSION_DIR` 中的 `requirements.yml`，核对 `session.id` 和 `session.project_root`。
+1. 实质处理前读取会话目录或 `AGENT_WORKFLOW_SESSION_DIR` 中的 `requirements.yml` 和 `questions.yml`，核对 `session.id` 和 `session.project_root`。
 2. 更新新增、修改、取消和到期的要求；建议经用户确认后才记录。
 3. 读取 `.todos.yml`，登记并更新实际任务。
-4. 答复前复核要求，保存本轮结果。
+4. 读取 `questions.yml` 中的 open 问题；已有回答沿用原决定，不重复提问。
+5. 答复前复核要求，保存本轮结果。
 
 编辑 YAML 前读 [yaml-schemas.md](references/yaml-schemas.md)；写目录或文件说明前读 [content-guidance.md](references/content-guidance.md)。不得保存隐藏思维、凭证或无关聊天。
 
+## 不确定时先问
+
+能通过源码、文档或工具核验的问题先自行核验。只有缺口会影响目标、权限、安全或结果正确性时才询问用户；不要替用户猜测。一次只问一个关键问题，提供建议或明确选项，独立工作可继续进行。
+
+提问前将问题、原因和必要上下文写入会话 `questions.yml`，用户回答后及时记录，取消的问题不再阻塞。恢复会话时先读 open 问题，已回答的问题不重复询问。
+
+```bash
+python3 scripts/session_questions.py init --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录>
+python3 scripts/session_questions.py ask --file <文件> --session-id <ID> --project-root <根目录> --question <问题> --reason <为什么需要用户决定>
+python3 scripts/session_questions.py answer --file <文件> --session-id <ID> --project-root <根目录> --id <Q-ID> --answer <回答>
+python3 scripts/session_questions.py list --file <文件> --status open
+```
+
 ## 初始化
 
-模板位于 `assets/`：`requirements.yml` 放会话目录，`todos.yml` 和 `doc-forest.yml` 放项目根目录并加前导点，`info.yml` 放各镜像目录。
+模板位于 `assets/`：`requirements.yml` 和 `questions.yml` 放会话目录，`todos.yml` 和 `doc-forest.yml` 放项目根目录并加前导点，`info.yml` 放各镜像目录。
 
 ```bash
 python3 scripts/state_files.py requirements init --file <会话目录/requirements.yml> --session-id <ID> --project-root <项目根目录>
@@ -94,10 +108,12 @@ python3 scripts/check_doc_forest.py --root <项目根目录> --path <相对路�
 
 ## 安装
 
-先读 [paths.md](references/paths.md)。权威 Skill 默认位于 `$HOME/.agents/skills/agent-workflow/`，Windows 使用 `%USERPROFILE%\.agents\skills\agent-workflow\`。`assets/AGENTS.template.md` 是指导模板，须按宿主支持的方式接入 `$HOME/.agents/AGENTS.md` 和宿主指导入口，不覆盖已有规则。
+先读 [paths.md](references/paths.md)。权威 Skill 默认位于 `$HOME/.agents/skills/agent-workflow/`，Windows 使用 `%USERPROFILE%\.agents\skills\agent-workflow\`。
+
+解包后运行一次：
 
 ```bash
-python3 scripts/install_links.py --shared-root ~/.agents --host-skill-dir ~/.claude/skills
+python3 scripts/install.py --host auto
 ```
 
-重复 `--host-skill-dir` 接入多个宿主。已有实体默认不覆盖，确认复用时加 `--use-existing`。不支持目录链接时明确报告，不复制第二份。链接安装不等于指导文件已加载。
+安装器会安装共享 Skill、检测并链接宿主、合并 `assets/AGENTS.template.md` 的指导区块，保留已有其他规则。使用 `--host all` 安装全部支持的宿主；已有共享实体需要复用时添加 `--use-existing`。不支持目录链接时明确报告，不复制第二份。安装后重启或开启新会话，并核验宿主实际加载。`install_links.py` 仅用于需要分开管理链接的低层操作。
