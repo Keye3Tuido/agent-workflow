@@ -14,6 +14,8 @@ files:
     purpose: "测试定位精度、模块检索、行号、相关测试和扫描预算"
   - name: "test_install_and_package.py"
     purpose: "测试权威实体、链接、冲突保护和包规范"
+  - name: "test_multi_agent_workflow.py"
+    purpose: "测试双 Agent 并发任务、要求隔离、实际验证和验收清理"
   - name: "test_state_files.py"
     purpose: "测试状态生命周期、会话绑定和并发写入"
   - name: "test_update_skill.py"

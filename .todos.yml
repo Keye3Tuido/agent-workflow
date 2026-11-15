@@ -1,5 +1,5 @@
 schema_version: '1.0'
-updated_at: '2026-11-15T01:56:25Z'
+updated_at: '2026-11-15T01:59:52Z'
 next_task_number: 21
 tasks:
 - id: TASK-001
@@ -253,8 +253,11 @@ tasks:
   acceptance_criteria:
   - 清理无关产物并发布当前修复版本
   - 实际验证共享 todos、独立 requirements、并发写入、验证证据与验收清理
-  status: working
+  status: done
   created_at: '2026-11-15T01:55:40Z'
-  updated_at: '2026-11-15T01:55:40Z'
+  updated_at: '2026-11-15T01:59:52Z'
   executor: conversation-9bcdcba9
   started_at: '2026-11-15T01:55:40Z'
+  verification:
+  - v1.0.2 已发布；双 Agent 实际协同验证通过；21 步操作与状态快照已保存；57 项测试通过
+  completed_at: '2026-11-15T01:59:52Z'

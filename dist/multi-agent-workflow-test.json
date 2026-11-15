@@ -1,0 +1,358 @@
+{
+  "schema_version": "1.0",
+  "scenario": "Agent A 实现配置读取；Agent B 仅编写测试",
+  "checks": [
+    "两个 Agent 并发添加任务且 ID 不冲突",
+    "不同执行者可各有一个 working，同执行者第二个 working 被拒绝",
+    "实际配置读取与测试通过，生产文件未被 Agent B 修改",
+    "两个会话的要求和复核记录保持隔离，错误会话写入被拒绝",
+    "验收后清理 accepted，未验收任务可删除"
+  ],
+  "operations": [
+    {
+      "agent": "A",
+      "operation": "todos init",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "file": "/Users/user01/Documents/Kimi/Workspaces/agent-workflow/tmp/tmparbzoouy/project/.todos.yml"
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "requirements init",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "file": "/Users/user01/Documents/Kimi/Workspaces/agent-workflow/tmp/tmparbzoouy/session-a/requirements.yml"
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "requirements init",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "file": "/Users/user01/Documents/Kimi/Workspaces/agent-workflow/tmp/tmparbzoouy/session-b/requirements.yml"
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "requirements upsert",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "REQ-001"
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "requirements upsert",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "REQ-001"
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "todos add",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-001"
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "todos add",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-002"
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "todos transition",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-001",
+        "status": "working"
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "todos transition",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-002",
+        "status": "working"
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "todos add",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-003"
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "todos transition",
+      "returncode": 1,
+      "result": {}
+    },
+    {
+      "agent": "A+B",
+      "operation": "python unittest discover",
+      "returncode": 0,
+      "result": {
+        "tests": 1,
+        "stderr": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK"
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "todos transition",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-001",
+        "status": "done"
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "todos transition",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-002",
+        "status": "done"
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "requirements review",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "reviewed": 1
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "requirements review",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "reviewed": 1
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "requirements upsert",
+      "returncode": 1,
+      "result": {}
+    },
+    {
+      "agent": "B",
+      "operation": "todos remove",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "removed": "TASK-003"
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "todos transition",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-001",
+        "status": "accepted"
+      }
+    },
+    {
+      "agent": "B",
+      "operation": "todos transition",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "id": "TASK-002",
+        "status": "accepted"
+      }
+    },
+    {
+      "agent": "A",
+      "operation": "todos clean-accepted",
+      "returncode": 0,
+      "result": {
+        "ok": true,
+        "removed": [
+          "TASK-001",
+          "TASK-002"
+        ]
+      }
+    }
+  ],
+  "snapshots": {
+    "done": {
+      "schema_version": "1.0",
+      "updated_at": "2026-11-15T01:58:50Z",
+      "next_task_number": 4,
+      "tasks": [
+        {
+          "id": "TASK-001",
+          "title": "实现配置读取",
+          "acceptance_criteria": [
+            "配置读取测试通过"
+          ],
+          "status": "done",
+          "created_at": "2026-11-15T01:58:50Z",
+          "updated_at": "2026-11-15T01:58:50Z",
+          "executor": "agent-a",
+          "started_at": "2026-11-15T01:58:50Z",
+          "verification": [
+            "配置读取正常值和缺失默认值测试通过"
+          ],
+          "completed_at": "2026-11-15T01:58:50Z"
+        },
+        {
+          "id": "TASK-002",
+          "title": "编写配置读取测试",
+          "acceptance_criteria": [
+            "配置读取测试通过"
+          ],
+          "status": "done",
+          "created_at": "2026-11-15T01:58:50Z",
+          "updated_at": "2026-11-15T01:58:50Z",
+          "executor": "agent-b",
+          "started_at": "2026-11-15T01:58:50Z",
+          "verification": [
+            "配置读取正常值和缺失默认值测试通过"
+          ],
+          "completed_at": "2026-11-15T01:58:50Z"
+        },
+        {
+          "id": "TASK-003",
+          "title": "并行额外任务",
+          "acceptance_criteria": [
+            "不得干扰现有任务"
+          ],
+          "status": "todo",
+          "created_at": "2026-11-15T01:58:50Z",
+          "updated_at": "2026-11-15T01:58:50Z"
+        }
+      ]
+    },
+    "accepted": {
+      "schema_version": "1.0",
+      "updated_at": "2026-11-15T01:58:50Z",
+      "next_task_number": 4,
+      "tasks": [
+        {
+          "id": "TASK-001",
+          "title": "实现配置读取",
+          "acceptance_criteria": [
+            "配置读取测试通过"
+          ],
+          "status": "accepted",
+          "created_at": "2026-11-15T01:58:50Z",
+          "updated_at": "2026-11-15T01:58:50Z",
+          "executor": "agent-a",
+          "started_at": "2026-11-15T01:58:50Z",
+          "verification": [
+            "配置读取正常值和缺失默认值测试通过"
+          ],
+          "completed_at": "2026-11-15T01:58:50Z",
+          "acceptance_evidence": "模拟用户明确回复：验收通过",
+          "accepted_at": "2026-11-15T01:58:50Z"
+        },
+        {
+          "id": "TASK-002",
+          "title": "编写配置读取测试",
+          "acceptance_criteria": [
+            "配置读取测试通过"
+          ],
+          "status": "accepted",
+          "created_at": "2026-11-15T01:58:50Z",
+          "updated_at": "2026-11-15T01:58:50Z",
+          "executor": "agent-b",
+          "started_at": "2026-11-15T01:58:50Z",
+          "verification": [
+            "配置读取正常值和缺失默认值测试通过"
+          ],
+          "completed_at": "2026-11-15T01:58:50Z",
+          "acceptance_evidence": "模拟用户明确回复：验收通过",
+          "accepted_at": "2026-11-15T01:58:50Z"
+        }
+      ]
+    },
+    "cleaned": {
+      "schema_version": "1.0",
+      "updated_at": "2026-11-15T01:58:50Z",
+      "next_task_number": 4,
+      "tasks": []
+    },
+    "requirements_a": {
+      "schema_version": "1.0",
+      "session": {
+        "id": "session-a",
+        "project_root": "/Users/user01/Documents/Kimi/Workspaces/agent-workflow/tmp/tmparbzoouy/project",
+        "created_at": "2026-11-15T01:58:50Z",
+        "updated_at": "2026-11-15T01:58:50Z"
+      },
+      "next_requirement_number": 2,
+      "requirements": [
+        {
+          "id": "REQ-001",
+          "text": "实现配置读取函数并验证"
+        }
+      ],
+      "response_review": {
+        "reviewed_at": "2026-11-15T01:58:50Z",
+        "results": [
+          {
+            "requirement_id": "REQ-001",
+            "status": "met",
+            "evidence": "配置读取正常值和缺失默认值测试通过"
+          }
+        ]
+      }
+    },
+    "requirements_b": {
+      "schema_version": "1.0",
+      "session": {
+        "id": "session-b",
+        "project_root": "/Users/user01/Documents/Kimi/Workspaces/agent-workflow/tmp/tmparbzoouy/project",
+        "created_at": "2026-11-15T01:58:50Z",
+        "updated_at": "2026-11-15T01:58:50Z"
+      },
+      "next_requirement_number": 2,
+      "requirements": [
+        {
+          "id": "REQ-001",
+          "text": "不得修改生产代码",
+          "polarity": "forbidden"
+        }
+      ],
+      "response_review": {
+        "reviewed_at": "2026-11-15T01:58:50Z",
+        "results": [
+          {
+            "requirement_id": "REQ-001",
+            "status": "met",
+            "evidence": "Agent B 仅新增测试，生产文件哈希未变"
+          }
+        ]
+      }
+    }
+  }
+}
