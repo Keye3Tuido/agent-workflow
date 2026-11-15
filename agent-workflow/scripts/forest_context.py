@@ -277,6 +277,45 @@ class ContextFinder:
                 prefixes.append(test_root)
         return prefixes
 
+    def select_focus(self, candidates: list[dict[str, Any]]) -> tuple[str | None, bool]:
+        if not candidates:
+            return None, False
+        by_module = {}
+        for item in candidates:
+            by_module.setdefault(self.module_prefix(item["path"]), []).append(item)
+        keyword_modules = {}
+        for module, items in by_module.items():
+            for keyword in {keyword for item in items for keyword in item["matches"]}:
+                keyword_modules.setdefault(keyword, set()).add(module)
+        scores = {}
+        for module, items in by_module.items():
+            data = self.checker.info_cache.get(module)
+            if not isinstance(data, dict) or not any(
+                key in data for key in ("boundary", "entry", "depends_on")
+            ):
+                continue
+            score = 0.0
+            for keyword in {keyword for item in items for keyword in item["matches"]}:
+                specificity = 1 / len(keyword_modules[keyword])
+                reasons = {
+                    reason for item in items if keyword in item["matches"]
+                    for reason in item["reasons"]
+                }
+                score += 25 * specificity
+                for reason, points in (("anchor", 1000), ("path", 50), ("summary", 35), ("directory", 10), ("content", 5)):
+                    if reason in reasons:
+                        score += points * specificity
+            scores[module] = score
+        if not scores:
+            return None, False
+        top_overall = self.module_prefix(candidates[0]["path"])
+        if top_overall not in scores:
+            return None, False
+        ordered = sorted(scores, key=lambda module: (-scores[module], module))
+        top = ordered[0]
+        ambiguous = len(ordered) > 1 and scores[ordered[1]] >= scores[top] * 0.9
+        return (None, True) if ambiguous else (top, False)
+
     def run(self) -> dict[str, Any]:
         if not self.expected:
             self.refresh_sources()
@@ -324,20 +363,16 @@ class ContextFinder:
         candidates.sort(key=lambda item: (-item["score"], item["path"]))
         all_candidates = candidates
         focus_module = None
+        focus_ambiguous = False
         focus_filtered_out = 0
         if self.focus and candidates:
-            focus_module = self.module_prefix(candidates[0]["path"])
-            focus_data = self.checker.info_cache.get(focus_module)
-            if isinstance(focus_data, dict) and any(
-                key in focus_data for key in ("boundary", "entry", "depends_on")
-            ):
+            focus_module, focus_ambiguous = self.select_focus(candidates)
+            if focus_module:
                 candidates = [
                     item for item in candidates
                     if self.module_prefix(item["path"]) == focus_module
                 ]
                 focus_filtered_out = len(all_candidates) - len(candidates)
-            else:
-                focus_module = None
         selected = candidates[: self.max_results]
         related = self.related_tests(selected, all_candidates, all_files)
         related_modules = self.related_modules(selected)
@@ -350,6 +385,7 @@ class ContextFinder:
             "task": self.task,
             "keywords": self.keywords,
             "focus_module": focus_module,
+            "focus_ambiguous": focus_ambiguous,
             "locations": selected,
             "core_members": core_members,
             "related_tests": related,
@@ -584,6 +620,8 @@ def main() -> int:
     print(f"KEYWORDS: {', '.join(report['keywords']) or '(none)'}")
     if report["focus_module"]:
         print(f"FOCUS: {report['focus_module']}")
+    elif report["focus_ambiguous"]:
+        print("FOCUS: ambiguous; no module filter applied")
     for item in report["locations"]:
         print(f"{item['path']}  score={item['score']}  reasons={','.join(item['reasons'])}")
         for line in item["lines"]:

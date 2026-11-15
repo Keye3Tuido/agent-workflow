@@ -1,6 +1,6 @@
 schema_version: '1.0'
-updated_at: '2026-11-15T01:06:07Z'
-next_task_number: 18
+updated_at: '2026-11-15T01:28:46Z'
+next_task_number: 19
 tasks:
 - id: TASK-001
   title: 实现通用 AGENTS.md、共享 Skill 和 YAML 规范
@@ -222,3 +222,13 @@ tasks:
   verification:
   - CardSort 四任务完成：首次 446.18ms、缓存 252.89ms，基线 571.00ms；必要覆盖 100%；发现公会自动聚焦误判并验证路径锚点可纠正
   completed_at: '2026-11-15T01:06:07Z'
+- id: TASK-018
+  title: 修复通用关键词导致的自动聚焦误判
+  acceptance_criteria:
+  - 按模块汇总特异性与关键词覆盖，歧义时不聚焦
+  - CardSort 与 SLRelease 回归通过，并发布修复版本
+  status: working
+  created_at: '2026-11-15T01:21:51Z'
+  updated_at: '2026-11-15T01:21:51Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-15T01:21:51Z'

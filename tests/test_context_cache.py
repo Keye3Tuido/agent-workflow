@@ -97,6 +97,39 @@ class CacheTests(unittest.TestCase):
         self.assertNotIn("other/unrelated.py", [item["path"] for item in result["locations"]])
         self.assertIn("src/nested/core.py", [item["path"] for item in result["core_members"]])
 
+    def test_specific_module_evidence_beats_generic_content_frequency(self):
+        (self.root / "sdk").mkdir()
+        (self.root / "business").mkdir()
+        (self.root / "sdk" / "GuildClient.cpp").write_text("GuildClient guildChat\n", encoding="utf-8")
+        (self.root / "sdk" / "AsyncCallHelper.hpp").write_text("AsyncCallHelper\n", encoding="utf-8")
+        (self.root / "sdk" / "guildChat.cpp").write_text("guildChat\n", encoding="utf-8")
+        (self.root / "business" / "RankSystem.cpp").write_text("rank\n" * 20, encoding="utf-8")
+        self.write_info("sdk", "网络 SDK", metadata={"boundary": "异步接口"})
+        self.write_info("business", "业务模块", metadata={"boundary": "业务编排"})
+        self.write_info(".", "项目", directories=[{"name": "business"}, {"name": "sdk"}])
+        report = find_context(
+            self.root,
+            "公会异步请求",
+            keywords=["GuildClient", "AsyncCallHelper", "guildChat", "rank"],
+        )
+        self.assertEqual(report["focus_module"], "sdk")
+        self.assertFalse(report["focus_ambiguous"])
+        self.assertNotIn("business/RankSystem.cpp", [item["path"] for item in report["locations"]])
+
+    def test_ambiguous_modules_disable_focus_filter(self):
+        (self.root / "alpha").mkdir()
+        (self.root / "beta").mkdir()
+        (self.root / "alpha" / "shared.py").write_text("shared\n", encoding="utf-8")
+        (self.root / "beta" / "shared.py").write_text("shared\n", encoding="utf-8")
+        self.write_info("alpha", "模块 A", metadata={"boundary": "边界 A"})
+        self.write_info("beta", "模块 B", metadata={"boundary": "边界 B"})
+        self.write_info(".", "项目", directories=[{"name": "alpha"}, {"name": "beta"}])
+        report = find_context(self.root, "共享实现", keywords=["shared"])
+        self.assertIsNone(report["focus_module"])
+        self.assertTrue(report["focus_ambiguous"])
+        self.assertEqual(report["scan"]["focus_filtered_out"], 0)
+        self.assertEqual(len(report["locations"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

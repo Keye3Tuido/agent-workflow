@@ -59,7 +59,7 @@ python3 scripts/state_files.py todos clean-accepted --file <文件>
 python3 scripts/forest_context.py --root <项目根目录> --task <需求> --keyword <关键词> --max-results 10
 ```
 
-可重复 `--keyword` 和 `--path`。输出候选文件、核心成员、相关测试、相关模块和行号；`--format json` 提供扫描统计。检索复用现有职责、边界、入口和依赖字段，嵌套文件继承最近模块根目录的元数据。目录摘要只加权，文件必须自身命中或位于显式路径锚点。相关测试按命名对应及同模块关键词证据补充。派生 SQLite 缓存仅写 `.cache/agent-workflow/`，可删除重建，可用 `--no-cache` 禁用；不进入 Forest，不修改源码或 Git 忽略规则。按输出定向读取源码和测试，关键词匹配不等于完整覆盖。
+可重复 `--keyword` 和 `--path`。输出候选文件、核心成员、相关测试、相关模块和行号；`--format json` 提供扫描统计。检索复用现有职责、边界、入口和依赖字段，嵌套文件继承最近模块根目录的元数据。自动聚焦按模块汇总关键词特异性和不同关键词覆盖，证据接近时报告 `focus_ambiguous` 且不过滤，显式路径锚点优先。目录摘要只加权，文件必须自身命中或位于显式路径锚点。相关测试按命名对应及同模块关键词证据补充。派生 SQLite 缓存仅写 `.cache/agent-workflow/`，可删除重建，可用 `--no-cache` 禁用；不进入 Forest，不修改源码或 Git 忽略规则。按输出定向读取源码和测试，关键词匹配不等于完整覆盖。
 
 按目录或文件路径查看局部模块架构：
 
