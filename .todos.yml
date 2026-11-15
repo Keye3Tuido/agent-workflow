@@ -1,5 +1,5 @@
 schema_version: '1.0'
-updated_at: '2026-11-15T01:28:46Z'
+updated_at: '2026-11-15T01:29:23Z'
 next_task_number: 19
 tasks:
 - id: TASK-001
@@ -227,8 +227,11 @@ tasks:
   acceptance_criteria:
   - 按模块汇总特异性与关键词覆盖，歧义时不聚焦
   - CardSort 与 SLRelease 回归通过，并发布修复版本
-  status: working
+  status: done
   created_at: '2026-11-15T01:21:51Z'
-  updated_at: '2026-11-15T01:21:51Z'
+  updated_at: '2026-11-15T01:29:23Z'
   executor: conversation-9bcdcba9
   started_at: '2026-11-15T01:21:51Z'
+  verification:
+  - CardSort 公会聚焦修正为 guild_sdk，前五 0→5；两项目八项任务必要覆盖 100%；43 项测试通过；v1.0.1 已发布
+  completed_at: '2026-11-15T01:29:23Z'
