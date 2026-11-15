@@ -44,7 +44,7 @@ Windows：
 python3 <共享Skill>/scripts/update_skill.py check
 ```
 
-`update_available: true` 时才执行 `apply`。更新器校验版本、资产地址和压缩包，保留旧目录备份；完成后重新加载 Skill，不把磁盘更新当作当前会话已经加载。查询失败时使用当前版本并报告，不重复请求。
+`update_available: true` 时才执行 `apply`。更新器校验版本、资产地址和压缩包，保留旧目录备份；完成后重新加载 Skill，不把磁盘更新当作当前会话已经加载。查询优先使用已登录的 `gh`，无 `gh` 时使用公开 API；失败时使用当前版本并报告，不重复请求。
 
 ## 每轮维护要求
 

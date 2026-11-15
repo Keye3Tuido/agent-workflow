@@ -99,6 +99,9 @@ class PackageTests(unittest.TestCase):
             self.assertTrue((SKILL / "references" / reference).is_file())
         for name in ("README.md", "INSTALLATION_GUIDE.md", "CHANGELOG.md"):
             self.assertFalse((SKILL / name).exists())
+        self.assertTrue((ROOT / "LICENSE").is_file())
+        self.assertTrue((SKILL / "LICENSE").is_file())
+        self.assertIn("MIT License", (SKILL / "LICENSE").read_text(encoding="utf-8"))
 
     def test_assets_follow_their_schemas(self):
         validate_config(load_yaml(SKILL / "assets" / "doc-forest.yml"))

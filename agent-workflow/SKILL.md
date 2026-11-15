@@ -15,7 +15,7 @@ description: Maintain session requirements, project todos, and .doc-forest summa
 python3 <共享Skill>/scripts/update_skill.py check
 ```
 
-固定查询 `https://github.com/Keye3Tuido/agent-workflow/releases/latest`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。更新后重新加载 Skill。查询失败时使用当前版本并报告，不重复请求。
+固定查询 `https://github.com/Keye3Tuido/agent-workflow/releases/latest`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。更新后重新加载 Skill。查询优先使用已登录的 `gh`，无 `gh` 时使用公开 API；失败时使用当前版本并报告，不重复请求。
 
 ## 恢复状态
 

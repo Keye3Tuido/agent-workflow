@@ -2,6 +2,8 @@ schema_version: "1.0"
 purpose: "供各宿主链接使用的共享 Skill"
 contents_summary: "工作流入口、YAML 规范、模板和维护脚本"
 files:
+  - name: "LICENSE"
+    purpose: "提供 Skill 分发包的 MIT 开源协议"
   - name: "SKILL.md"
     purpose: "定义 Skill 触发条件和操作流程"
   - name: "VERSION"

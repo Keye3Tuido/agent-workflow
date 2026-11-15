@@ -8,6 +8,8 @@ files:
     purpose: "记录任务、验收条件、状态和证据"
   - name: "AGENTS.md"
     purpose: "规定工作流、全局路径和表达要求"
+  - name: "LICENSE"
+    purpose: "提供项目的 MIT 开源协议"
 directories:
   - name: "agent-workflow"
   - name: "tests"
