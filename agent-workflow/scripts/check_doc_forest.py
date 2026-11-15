@@ -38,7 +38,8 @@ def validate_config(data: Any) -> dict[str, Any]:
         ("forest", "allowlist"),
         ("forest", "excluded_paths"),
     ):
-        values = data.get(section, {}).get(key)
+        section_data = data.get(section)
+        values = section_data.get(key) if isinstance(section_data, dict) else None
         if not isinstance(values, list):
             errors.append(f"{section}.{key} 必须是列表")
             continue

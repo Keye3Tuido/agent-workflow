@@ -63,6 +63,24 @@ class EdgeCaseTests(unittest.TestCase):
         matched = {keyword for item in report["locations"] for keyword in item["matches"]}
         self.assertEqual(matched, {"恢复", "restorepurchases"})
 
+    def test_non_ascii_casefold_matches_with_and_without_cache(self):
+        self.add_source("restore.py", "Änderung\n")
+        cached = find_context(self.root, "Unicode", keywords=["änderung"])
+        direct = find_context(self.root, "Unicode", keywords=["änderung"], use_cache=False)
+        expected = ["src/restore.py"]
+        self.assertEqual([item["path"] for item in cached["locations"]], expected)
+        self.assertEqual([item["path"] for item in direct["locations"]], expected)
+
+    def test_deleted_directory_rebuilds_cache(self):
+        import shutil
+
+        self.add_source("worker.py", "worker\n")
+        find_context(self.root, "工作", keywords=["worker"])
+        shutil.rmtree(self.root / "src")
+        report = find_context(self.root, "工作", keywords=["worker"])
+        self.assertEqual(report["cache"]["status"], "rebuilt")
+        self.assertEqual(report["locations"], [])
+
     def test_corrupt_cache_rebuilds(self):
         self.add_source("worker.py", "worker\n")
         find_context(self.root, "工作", keywords=["worker"])
@@ -148,12 +166,14 @@ class EdgeCaseTests(unittest.TestCase):
 
     def test_invalid_dependency_kind_is_rejected(self):
         self.add_source("worker.py", "worker\n")
-        self.write_info("src", "源码模块", files=[{
-            "name": "worker.py",
-            "purpose": "工作",
-            "depends_on": [{"target": "worker.py", "kind": "unknown", "reason": "无效类型"}],
-        }])
-        self.assertIn("invalid_info", {item["code"] for item in check_forest(self.root)["findings"]})
+        for kind in ("unknown", ["call"]):
+            with self.subTest(kind=kind):
+                self.write_info("src", "源码模块", files=[{
+                    "name": "worker.py",
+                    "purpose": "工作",
+                    "depends_on": [{"target": "worker.py", "kind": kind, "reason": "无效类型"}],
+                }])
+                self.assertIn("invalid_info", {item["code"] for item in check_forest(self.root)["findings"]})
 
     def test_more_than_twenty_core_members_are_not_truncated(self):
         self.add_source("worker.py", "needle\n")

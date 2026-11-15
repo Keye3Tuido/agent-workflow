@@ -244,11 +244,12 @@ class ContextCache:
         return text
 
     def query(self, keywords: list[str], anchors: list[str]) -> list[dict[str, Any]]:
+        self.connection.create_function("casefold", 1, lambda value: value.casefold())
         conditions = []
         parameters = []
         for keyword in keywords:
             for column in ("path", "file_description", "directory_description", "content"):
-                conditions.append(f"instr(lower({column}), ?) > 0")
+                conditions.append(f"instr(casefold({column}), ?) > 0")
                 parameters.append(keyword)
         for anchor in anchors:
             conditions.append("path = ?")

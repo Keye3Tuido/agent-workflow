@@ -9,19 +9,21 @@
 | --- | --- |
 | Agent 自有全局目录 | 宿主指导入口、Skill 链接和专属配置 |
 | Agent 共享全局目录 | 权威 `AGENTS.md` 和 `skills/agent-workflow/` |
-| 项目根目录 | 项目 `AGENTS.md`、`.doc-forest.yml`、`.doc-forest/`、`.todos.yml` |
-| 会话目录 | 当前会话的 `requirements.yml` 和运行状态 |
+| 项目根目录 | 项目 `AGENTS.md`、`.doc-forest.yml`、`.doc-forest/`、`.todos.yml`、`.agent-workflow-audit.jsonl` |
+| 会话目录 | 当前会话的 `requirements.yml`、`requirements-audit.jsonl` 和运行状态 |
 
 ```text
 macOS／Linux：
 $HOME/.agents/AGENTS.md
 $HOME/.agents/skills/agent-workflow/
 $HOME/.local/state/agent-workflow/<session-id>/requirements.yml
+$HOME/.local/state/agent-workflow/<session-id>/requirements-audit.jsonl
 
 Windows：
 %USERPROFILE%\.agents\AGENTS.md
 %USERPROFILE%\.agents\skills\agent-workflow\
 %LOCALAPPDATA%\agent-workflow\<session-id>\requirements.yml
+%LOCALAPPDATA%\agent-workflow\<session-id>\requirements-audit.jsonl
 
 ```
 
@@ -57,8 +59,11 @@ python3 <共享Skill>/scripts/update_skill.py check
 
 1. 读取 `.todos.yml`，登记实际任务；无新任务不制造记录。
 2. 状态只能 `todo → working → done → accepted`。开工前进入 `working`，验证后进入 `done`，仅用户明确验收后进入 `accepted`。
-3. 分别记录执行者与开始时间、完成时间与验证证据、验收时间与用户依据。阻塞原因独立记录。
-4. 用户取消的任务直接删除。每次 `git commit` 前删除全部 `accepted`，再校验 YAML 和森林。
+3. 开工前所有直接依赖必须为 `done` 或 `accepted`；拒绝循环依赖。仍被依赖的任务不得普通删除，`clean-accepted` 可清理已验收任务及其已满足依赖。
+4. 分别记录执行者与开始时间、完成时间与验证证据、验收时间与用户依据。阻塞原因独立记录。
+5. 用户取消的任务直接删除。每次 `git commit` 前删除全部 `accepted`，再校验 YAML 和森林。
+
+状态写操作与审计共用同一文件锁，按 `prepared → committed` 或 `prepared → failed` 追加 JSONL；纯读取和 `validate` 不写日志。任务审计位于项目根目录 `.agent-workflow-audit.jsonl`，要求审计位于会话目录 `requirements-audit.jsonl`。记录操作、执行者、会话、目标、状态迁移和成功时的状态 SHA-256；失败事件只写错误类型和脱敏类别，不记录原始异常文本、要求正文、源码或凭证。状态已替换但 `committed` 追加失败时，重试前核对状态与日志。
 
 ## 检查文档森林
 
@@ -81,7 +86,7 @@ python3 scripts/forest_context.py --root <项目根目录> --task <需求> --key
 
 已知路径时添加 `--path <相对路径>`。定位器输出候选文件、核心成员、匹配原因、相关测试、相关模块和源码行号，不返回整份文件。检索范围包括现有职责、边界、入口、依赖目标和原因。嵌套文件继承最近模块根目录的元数据。自动聚焦按模块汇总关键词特异性和不同关键词覆盖，通用内容频率不得单独决定模块；证据接近时报告 `focus_ambiguous` 且不过滤，显式路径锚点优先。文件必须自身命中路径、专属说明、源码或路径锚点；目录摘要仅用于加权。相关测试按命名对应及同模块关键词证据补充。按输出定向读取源码并核验，关键词匹配不等于完整覆盖。派生 SQLite 缓存仅写 `.cache/agent-workflow/`，可删除重建，不进入 Forest，不修改源码或 Git 忽略规则；`--no-cache` 可禁用。
 
-需要模块级架构时，按目录或文件路径查看局部直接关系：
+需要模块级架构时，按目录或文件路径查看局部直接关系。架构查询始终读取当前森林元数据，不复用上下文缓存：
 
 ```bash
 python3 scripts/forest_architecture.py --root <项目根目录> --path <模块路径>

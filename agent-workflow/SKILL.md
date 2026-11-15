@@ -42,7 +42,7 @@ python3 scripts/state_files.py todos init --file <项目根目录/.todos.yml>
 ```bash
 python3 scripts/state_files.py requirements upsert --file <文件> --session-id <ID> --project-root <根目录> --text <要求>
 python3 scripts/state_files.py requirements review --file <文件> --session-id <ID> --project-root <根目录> --results <JSON数组>
-python3 scripts/state_files.py todos add --file <文件> --title <任务> --acceptance-criteria <完成条件>
+python3 scripts/state_files.py todos add --file <文件> --title <任务> --acceptance-criteria <完成条件> [--dependency <TASK-ID>]
 python3 scripts/state_files.py todos transition --file <文件> --id <TASK-ID> --to working --executor <执行者ID>
 python3 scripts/state_files.py todos transition --file <文件> --id <TASK-ID> --to done --verification <验证结果>
 python3 scripts/state_files.py todos transition --file <文件> --id <TASK-ID> --to accepted --acceptance-evidence <用户验收依据>
@@ -50,6 +50,10 @@ python3 scripts/state_files.py todos clean-accepted --file <文件>
 ```
 
 默认要求为 `required + session`。禁止项、临时范围、任务 ID 和不同的原文引用按需添加。空字段和空列表省略。`requirements remove` 删除失效要求，`todos remove` 删除取消任务，`set-blocked`／`clear-blocked` 维护阻塞。修改后运行对应 `validate`。
+
+任务开工前，所有直接依赖必须为 `done` 或 `accepted`。循环依赖会使校验失败；仍被其他任务依赖时不得普通删除。`clean-accepted` 可清理已验收任务及其已满足依赖。
+
+状态写命令与审计共用同一文件锁：写入前追加 `prepared`，成功后追加带状态 SHA-256 的 `committed`，失败追加 `failed`；纯读取和 `validate` 不写日志。项目任务日志为 `.agent-workflow-audit.jsonl`，会话要求日志为会话目录的 `requirements-audit.jsonl`。日志记录操作、执行者、会话、目标和状态迁移；失败事件只写错误类型和脱敏类别，不记录原始异常文本、要求正文、源码或凭证。任务执行者可由 `AGENT_WORKFLOW_SESSION_ID` 标识。若状态已替换但 `committed` 追加失败，命令会报错，重试前须核对状态与日志。
 
 ## 定位任务上下文
 
@@ -67,7 +71,7 @@ python3 scripts/forest_context.py --root <项目根目录> --task <需求> --key
 python3 scripts/forest_architecture.py --root <项目根目录> --path <模块路径>
 ```
 
-输出职责边界、成员、直接依赖和查询时推导的反向依赖，不声称覆盖完整运行时调用链。
+架构查询始终读取当前森林元数据，不复用上下文缓存。输出职责边界、成员、直接依赖和查询时推导的反向依赖，不声称覆盖完整运行时调用链。
 
 ## 维护森林
 

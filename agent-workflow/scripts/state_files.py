@@ -11,10 +11,10 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
+from state_audit import perform
 from yaml_common import (
     YamlError,
     atomic_write_yaml,
-    file_lock,
     is_timestamp,
     load_yaml,
     nonempty_string,
@@ -109,7 +109,7 @@ def validate_requirements_data(data: Any) -> list[str]:
         if requirement.get("polarity", "required") not in ("required", "forbidden"):
             errors.append(f"{context}.polarity 无效")
         scope = requirement.get("scope", "session")
-        if scope not in SCOPE_TYPES:
+        if not isinstance(scope, str) or scope not in SCOPE_TYPES:
             errors.append(f"{context}.scope 无效")
         task_ids = requirement.get("task_ids", [])
         if not string_list(task_ids):
@@ -157,7 +157,8 @@ def validate_requirements_data(data: Any) -> list[str]:
                 errors.append(f"{context}.requirement_id 必须是字符串")
             else:
                 result_ids.append(requirement_id)
-            if result.get("status") not in REVIEW_STATUSES:
+            review_status = result.get("status")
+            if not isinstance(review_status, str) or review_status not in REVIEW_STATUSES:
                 errors.append(f"{context}.status 无效")
             if not nonempty_string(result.get("evidence")):
                 errors.append(f"{context}.evidence 必须是非空字符串")
@@ -210,7 +211,7 @@ def validate_todos_data(data: Any) -> list[str]:
         if not string_list(task.get("acceptance_criteria"), allow_empty=False):
             errors.append(f"{context}.acceptance_criteria 至少需要一个非空条件")
         status = task.get("status")
-        if status not in TASK_STATUSES:
+        if not isinstance(status, str) or status not in TASK_STATUSES:
             errors.append(f"{context}.status 无效")
         for key in ("created_at", "updated_at"):
             if not is_timestamp(task.get(key)):
@@ -248,7 +249,8 @@ def validate_todos_data(data: Any) -> list[str]:
             "working": ("completed_at", "accepted_at", "acceptance_evidence"),
             "done": ("accepted_at", "acceptance_evidence"),
         }
-        for key in forbidden.get(status, ()):
+        forbidden_fields = forbidden.get(status, ()) if isinstance(status, str) else ()
+        for key in forbidden_fields:
             if key in task:
                 errors.append(f"{context} {status} 应省略 {key}")
         if status in ("todo", "working") and verification:
@@ -263,7 +265,10 @@ def validate_todos_data(data: Any) -> list[str]:
     for index, task in enumerate(tasks):
         if not isinstance(task, dict):
             continue
-        for dependency in task.get("dependencies", []):
+        dependencies = task.get("dependencies", [])
+        if not isinstance(dependencies, list) or not all(isinstance(value, str) for value in dependencies):
+            continue
+        for dependency in dependencies:
             if dependency not in known_ids:
                 errors.append(f"tasks[{index}] 引用了不存在的依赖 {dependency!r}")
     if isinstance(next_number, int) and not isinstance(next_number, bool):
@@ -272,10 +277,42 @@ def validate_todos_data(data: Any) -> list[str]:
             errors.append("next_task_number 必须大于所有已用编号")
     working_executors = [
         task.get("executor") for task in tasks
-        if isinstance(task, dict) and task.get("status") == "working"
+        if (
+            isinstance(task, dict)
+            and task.get("status") == "working"
+            and isinstance(task.get("executor"), str)
+        )
     ]
     if len(working_executors) != len(set(working_executors)):
         errors.append("同一执行者同一时间最多一个 working")
+    graph = {
+        task["id"]: task.get("dependencies", [])
+        for task in tasks
+        if (
+            isinstance(task, dict)
+            and isinstance(task.get("id"), str)
+            and isinstance(task.get("dependencies", []), list)
+            and all(isinstance(value, str) for value in task.get("dependencies", []))
+        )
+    }
+    visiting = set()
+    visited = set()
+
+    def has_cycle(task_id: str) -> bool:
+        if task_id in visiting:
+            return True
+        if task_id in visited:
+            return False
+        visiting.add(task_id)
+        for dependency in graph.get(task_id, []):
+            if has_cycle(dependency):
+                return True
+        visiting.remove(task_id)
+        visited.add(task_id)
+        return False
+
+    if any(has_cycle(task_id) for task_id in graph):
+        errors.append("dependency_cycle: 依赖关系存在循环")
     return errors
 
 
@@ -299,15 +336,17 @@ def load_valid(path: Path, kind: str) -> Any:
     return data
 
 
-def mutate(path: Path, kind: str, operation: Callable[[Any], Any]) -> Any:
-    with file_lock(path):
+def mutate(path: Path, kind: str, operation: Callable[[Any], Any], arguments: Any) -> Any:
+    def write() -> Any:
         data = load_valid(path, kind)
         result = operation(data)
         errors = validate_document(path, data, kind)
         if errors:
             raise StateError("; ".join(errors))
         atomic_write_yaml(path, data)
-    return result
+        return result
+
+    return perform(path, kind, arguments, write)
 
 
 def require_session(data: Any, session_id: str, project_root: Path) -> None:
@@ -330,7 +369,8 @@ def initialize_requirements(arguments: argparse.Namespace) -> dict[str, Any]:
     root = arguments.project_root.resolve()
     if path == root or root in path.parents:
         raise StateError("requirements.yml 不得位于项目目录内")
-    with file_lock(path):
+
+    def write() -> dict[str, Any]:
         if path.exists():
             raise StateError(f"文件已存在: {path}")
         now = utc_now()
@@ -350,12 +390,15 @@ def initialize_requirements(arguments: argparse.Namespace) -> dict[str, Any]:
         if errors:
             raise StateError("; ".join(errors))
         atomic_write_yaml(path, data)
-    return {"file": str(path)}
+        return {"file": str(path)}
+
+    return perform(path, "requirements", arguments, write)
 
 
 def initialize_todos(arguments: argparse.Namespace) -> dict[str, Any]:
     path = arguments.file
-    with file_lock(path):
+
+    def write() -> dict[str, Any]:
         if path.exists():
             raise StateError(f"文件已存在: {path}")
         data = {
@@ -365,7 +408,9 @@ def initialize_todos(arguments: argparse.Namespace) -> dict[str, Any]:
             "tasks": [],
         }
         atomic_write_yaml(path, data)
-    return {"file": str(path.resolve())}
+        return {"file": str(path.resolve())}
+
+    return perform(path, "todos", arguments, write)
 
 
 def upsert_requirement(arguments: argparse.Namespace) -> dict[str, Any]:
@@ -425,7 +470,7 @@ def upsert_requirement(arguments: argparse.Namespace) -> dict[str, Any]:
         data["response_review"] = {"results": []}
         return {"id": requirement_id}
 
-    return mutate(arguments.file, "requirements", operation)
+    return mutate(arguments.file, "requirements", operation, arguments)
 
 
 def remove_requirement(arguments: argparse.Namespace) -> dict[str, Any]:
@@ -437,7 +482,7 @@ def remove_requirement(arguments: argparse.Namespace) -> dict[str, Any]:
         data["response_review"] = {"results": []}
         return {"removed": arguments.id}
 
-    return mutate(arguments.file, "requirements", operation)
+    return mutate(arguments.file, "requirements", operation, arguments)
 
 
 def review_requirements(arguments: argparse.Namespace) -> dict[str, Any]:
@@ -462,7 +507,7 @@ def review_requirements(arguments: argparse.Namespace) -> dict[str, Any]:
         data["session"]["updated_at"] = utc_now()
         return {"reviewed": len(results)}
 
-    return mutate(arguments.file, "requirements", operation)
+    return mutate(arguments.file, "requirements", operation, arguments)
 
 
 def add_todo(arguments: argparse.Namespace) -> dict[str, Any]:
@@ -485,22 +530,23 @@ def add_todo(arguments: argparse.Namespace) -> dict[str, Any]:
         data["updated_at"] = now
         return {"id": task_id}
 
-    return mutate(arguments.file, "todos", operation)
+    return mutate(arguments.file, "todos", operation, arguments)
 
 
 def remove_todo(arguments: argparse.Namespace) -> dict[str, Any]:
     def operation(data: Any) -> Any:
         find_item(data["tasks"], arguments.id, "任务")
+        dependents = [
+            item["id"] for item in data["tasks"]
+            if arguments.id in item.get("dependencies", [])
+        ]
+        if dependents:
+            raise StateError(f"dependency_in_use: 仍被 {', '.join(dependents)} 依赖")
         data["tasks"] = [item for item in data["tasks"] if item["id"] != arguments.id]
-        for task in data["tasks"]:
-            if "dependencies" in task:
-                task["dependencies"] = [value for value in task["dependencies"] if value != arguments.id]
-                if not task["dependencies"]:
-                    task.pop("dependencies")
         data["updated_at"] = utc_now()
         return {"removed": arguments.id}
 
-    return mutate(arguments.file, "todos", operation)
+    return mutate(arguments.file, "todos", operation, arguments)
 
 
 def transition_todo(arguments: argparse.Namespace) -> dict[str, Any]:
@@ -514,6 +560,15 @@ def transition_todo(arguments: argparse.Namespace) -> dict[str, Any]:
         if arguments.to == "working":
             if not nonempty_string(arguments.executor):
                 raise StateError("转为 working 必须提供 --executor")
+            status_by_id = {item["id"]: item["status"] for item in data["tasks"]}
+            incomplete = [
+                dependency for dependency in task.get("dependencies", [])
+                if status_by_id.get(dependency) not in ("done", "accepted")
+            ]
+            if incomplete:
+                raise StateError(
+                    f"dependency_not_complete: {', '.join(incomplete)} 尚未完成或验收"
+                )
             for other in data["tasks"]:
                 if (
                     other["id"] != task["id"]
@@ -538,7 +593,7 @@ def transition_todo(arguments: argparse.Namespace) -> dict[str, Any]:
         data["updated_at"] = now
         return {"id": task["id"], "status": task["status"]}
 
-    return mutate(arguments.file, "todos", operation)
+    return mutate(arguments.file, "todos", operation, arguments)
 
 
 def set_blocked(arguments: argparse.Namespace, clear: bool = False) -> dict[str, Any]:
@@ -554,7 +609,7 @@ def set_blocked(arguments: argparse.Namespace, clear: bool = False) -> dict[str,
         data["updated_at"] = task["updated_at"]
         return {"id": task["id"], "blocked_reason": task.get("blocked_reason")}
 
-    return mutate(arguments.file, "todos", operation)
+    return mutate(arguments.file, "todos", operation, arguments)
 
 
 def clean_accepted(arguments: argparse.Namespace) -> dict[str, Any]:
@@ -569,7 +624,7 @@ def clean_accepted(arguments: argparse.Namespace) -> dict[str, Any]:
         data["updated_at"] = utc_now()
         return {"removed": accepted_ids}
 
-    return mutate(arguments.file, "todos", operation)
+    return mutate(arguments.file, "todos", operation, arguments)
 
 
 def validate_command(arguments: argparse.Namespace, kind: str) -> dict[str, Any]:

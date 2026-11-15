@@ -96,7 +96,7 @@ class ContextFinder:
         self.skipped_binary = 0
         self.truncated = False
 
-    def files(self) -> list[tuple[str, Path, str]]:
+    def scan_files(self) -> list[tuple[str, Path, str]]:
         result = []
         for relative in sorted(self.expected):
             directory = self.checker.source_path(relative)
@@ -108,12 +108,19 @@ class ContextFinder:
                 result.append((file_relative, path, relative))
         return result
 
+    def files(self) -> list[tuple[str, Path, str]]:
+        try:
+            return self.scan_files()
+        except FileNotFoundError:
+            files, _ = self.refresh_sources()
+            return files
+
     def refresh_sources(self) -> tuple[list[tuple[str, Path, str]], dict[str, Any]]:
         self.checker = ForestChecker(self.root)
         self.module_metadata_cache.clear()
         self.checker.enumerate_expected()
         self.expected = self.checker.expected
-        return self.files(), self.checker.info_cache
+        return self.scan_files(), self.checker.info_cache
 
     def module_metadata(self, relative: str) -> tuple[str, dict[str, Any]]:
         if relative in self.module_metadata_cache:

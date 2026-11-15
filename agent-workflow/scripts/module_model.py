@@ -79,8 +79,9 @@ def validate_module_fields(
             continue
         if not nonempty_string(reason):
             errors.append(f"{item_context}.reason 必须是非空字符串")
-        if kind not in DEPENDENCY_KINDS:
+        if not isinstance(kind, str) or kind not in DEPENDENCY_KINDS:
             errors.append(f"{item_context}.kind 无效: {kind!r}")
+            continue
         try:
             resolved = resolve_target(source_directory, target)
         except ValueError as exc:

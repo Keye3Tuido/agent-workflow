@@ -132,17 +132,17 @@ tasks:
 
 每项仅需 `id`、`title`、`acceptance_criteria`、`status`、`created_at`、`updated_at`。按需添加：
 
-- `dependencies`：引用其他已有任务，不得重复或依赖自身。
+- `dependencies`：引用其他已有任务，不得重复、依赖自身或形成循环；所有直接依赖为 `done` 或 `accepted` 后才能开工。
 - `working`：必须有 `executor`、`started_at`；同一执行者最多一个。
 - `done`：还须有 `completed_at` 和非空 `verification`。
 - `accepted`：还须有 `accepted_at` 和用户明确的 `acceptance_evidence`。
 - `blocked_reason`：仅在存在阻塞时填写，解除时删除。
 
-状态只能 `todo → working → done → accepted`。不属于当前状态的字段和空列表省略。用户取消的任务直接删除；每次 `git commit` 前删除全部 `accepted`。
+状态只能 `todo → working → done → accepted`。不属于当前状态的字段和空列表省略。用户取消的任务直接删除，但仍被依赖的任务须先解除依赖；每次 `git commit` 前用 `clean-accepted` 删除全部 `accepted` 及其已满足依赖。
 
 ## 6. 状态脚本命令
 
-修改命令在同一文件锁内读取、校验、修改、再次校验并原子替换；校验命令只读。
+修改命令在同一文件锁内读取、校验、修改、再次校验、原子替换并追加审计；校验命令只读且不写审计。审计按 `prepared → committed` 或 `prepared → failed` 记录，成功事件包含状态文件 SHA-256。任务日志位于项目根目录 `.agent-workflow-audit.jsonl`，要求日志位于会话目录 `requirements-audit.jsonl`。失败事件只写错误类型和脱敏类别，日志不保存原始异常文本、要求正文、源码或凭证；若状态已替换但成功事件追加失败，重试前须核对状态与日志。
 
 ### 要求文件
 

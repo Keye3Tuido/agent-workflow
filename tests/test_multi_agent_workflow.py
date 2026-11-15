@@ -29,11 +29,14 @@ class MultiAgentWorkflowTests(unittest.TestCase):
             checks = []
 
             def run(agent, *arguments):
+                environment = os.environ.copy()
+                environment["AGENT_WORKFLOW_SESSION_ID"] = f"session-{agent.lower()}"
                 completed = subprocess.run(
                     [sys.executable, "-B", str(SCRIPT), *map(str, arguments)],
                     capture_output=True,
                     text=True,
                     check=False,
+                    env=environment,
                 )
                 payload = json.loads(completed.stdout) if completed.stdout else {}
                 operations.append({
@@ -182,12 +185,52 @@ class MultiAgentWorkflowTests(unittest.TestCase):
             require_ok("A", "todos", "clean-accepted", "--file", todos)
             cleaned_snapshot = read_yaml(todos)
             self.assertEqual(cleaned_snapshot["tasks"], [])
+
+            def read_jsonl(path):
+                return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+            project_audit = read_jsonl(project / ".agent-workflow-audit.jsonl")
+            requirements_audit_a = read_jsonl(session_a / "requirements-audit.jsonl")
+            requirements_audit_b = read_jsonl(session_b / "requirements-audit.jsonl")
+            committed = [event for event in project_audit if event["event"] == "committed"]
+            self.assertTrue(any(
+                event["operation"] == "transition" and event["target_id"] == task_a
+                and event["to"] == "working" and event["actor"] == "agent-a"
+                and event["session_id"] == "session-a"
+                for event in committed
+            ))
+            self.assertTrue(any(
+                event["operation"] == "transition" and event["target_id"] == task_b
+                and event["to"] == "done" and event["session_id"] == "session-b"
+                for event in committed
+            ))
+            conflict_failure = next(
+                event for event in project_audit
+                if event["event"] == "failed" and event.get("target_id") == conflict_task
+            )
+            self.assertNotIn(
+                conflict_failure["operation_id"],
+                {event["operation_id"] for event in committed},
+            )
+            self.assertTrue(any(
+                event["event"] == "committed" and event["operation"] == "review"
+                and event["session_id"] == "session-a"
+                for event in requirements_audit_a
+            ))
+            self.assertTrue(any(
+                event["event"] == "failed" and event["operation"] == "upsert"
+                and event["session_id"] == "session-b"
+                for event in requirements_audit_a
+            ))
+            self.assertTrue(all(event["session_id"] == "session-b" for event in requirements_audit_b))
+            self.assertNotIn("不应写入", json.dumps(requirements_audit_a, ensure_ascii=False))
             checks.extend([
                 "两个 Agent 并发添加任务且 ID 不冲突",
                 "不同执行者可各有一个 working，同执行者第二个 working 被拒绝",
                 "实际配置读取与测试通过，生产文件未被 Agent B 修改",
                 "两个会话的要求和复核记录保持隔离，错误会话写入被拒绝",
                 "验收后清理 accepted，未验收任务可删除",
+                "共享任务和会话要求均记录 prepared、committed、failed，失败操作无 committed",
             ])
             report = {
                 "schema_version": "1.0",
@@ -200,6 +243,9 @@ class MultiAgentWorkflowTests(unittest.TestCase):
                     "cleaned": cleaned_snapshot,
                     "requirements_a": review_a,
                     "requirements_b": review_b,
+                    "project_audit": project_audit,
+                    "requirements_audit_a": requirements_audit_a,
+                    "requirements_audit_b": requirements_audit_b,
                 },
             }
             report_path = os.environ.get("AGENT_WORKFLOW_EVAL_REPORT")

@@ -77,6 +77,20 @@ class ArchitectureTests(unittest.TestCase):
         with self.assertRaises(ConfigError):
             build_architecture(self.root, "src/missing.py")
 
+    def test_current_forest_overrides_stale_cached_metadata(self):
+        from forest_context import find_context
+        from yaml_common import load_yaml
+
+        find_context(self.root, "工作", keywords=["worker"])
+        info_path = self.root / ".doc-forest" / "src" / "info.yml"
+        data = load_yaml(info_path)
+        data["files"][1]["purpose"] = "新职责"
+        data["files"][1].pop("depends_on")
+        self.write_yaml(info_path, data)
+        report = build_architecture(self.root, "src/worker.py")
+        self.assertEqual(report["module"]["purpose"], "新职责")
+        self.assertEqual(report["depends_on"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

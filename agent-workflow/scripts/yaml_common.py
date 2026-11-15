@@ -28,6 +28,8 @@ def normalize_project_path(value: str, allow_root: bool = False) -> str:
         return "."
     if not isinstance(value, str) or not value or "\\" in value or value.startswith("/"):
         raise ValueError(f"无效项目相对路径: {value!r}")
+    if any(part in ("", ".", "..") for part in value.split("/")):
+        raise ValueError(f"无效项目相对路径: {value!r}")
     path = PurePosixPath(value)
     if any(part in ("", ".", "..") for part in path.parts):
         raise ValueError(f"无效项目相对路径: {value!r}")

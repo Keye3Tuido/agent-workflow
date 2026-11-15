@@ -184,6 +184,23 @@ class ForestTests(unittest.TestCase):
         self.assertTrue(report["valid"], report["findings"])
         self.assertEqual(report["checked_directories"], ["."])
 
+    def test_null_config_section_returns_config_error(self):
+        self.write_yaml(self.root / ".doc-forest.yml", {
+            "schema_version": "1.0",
+            "write_check": None,
+            "forest": {"allowlist": [], "excluded_paths": []},
+        })
+        with self.assertRaises(ConfigError):
+            check_forest(self.root)
+
+    def test_noncanonical_path_segments_are_rejected(self):
+        from yaml_common import normalize_project_path
+
+        for value in ("src//worker.py", "src/./worker.py", "src/../worker.py", "src/worker.py/"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                normalize_project_path(value)
+        self.assertEqual(normalize_project_path("src/worker.py"), "src/worker.py")
+
     def test_json_cli_and_exit_codes(self):
         self.write_info(".")
         completed = subprocess.run(

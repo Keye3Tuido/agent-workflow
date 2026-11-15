@@ -1,7 +1,9 @@
 schema_version: "1.0"
 purpose: "开发并分发通用 Agent 工作流"
-contents_summary: "提示词、Skill、测试、任务与森林配置"
+contents_summary: "提示词、Skill、测试、任务、操作审计与森林配置"
 files:
+  - name: ".agent-workflow-audit.jsonl"
+    purpose: "追加记录共享任务的写入准备、提交、失败事件和状态哈希"
   - name: ".doc-forest.yml"
     purpose: "配置写入豁免、目录白名单与排除规则"
   - name: ".todos.yml"

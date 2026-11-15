@@ -292,6 +292,46 @@ class StateTests(unittest.TestCase):
         validated = self.run_state("todos", "validate", "--file", self.todos)
         self.assertEqual(validated.returncode, 0, validated.stderr)
 
+    def test_non_string_fields_return_validation_errors_without_traceback(self):
+        from yaml_common import dump_yaml
+
+        self.init_todos()
+        added = self.run_state(
+            "todos", "add", "--file", self.todos,
+            "--title", "校验任务", "--acceptance-criteria", "无异常",
+        )
+        self.assertEqual(added.returncode, 0, added.stderr)
+        data = load_yaml(self.todos)
+        data["tasks"][0]["status"] = []
+        self.todos.write_text(dump_yaml(data), encoding="utf-8")
+        invalid = self.run_state("todos", "validate", "--file", self.todos)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertNotIn("Traceback", invalid.stderr)
+
+        data["tasks"][0]["status"] = "working"
+        data["tasks"][0]["executor"] = {}
+        data["tasks"][0]["started_at"] = data["tasks"][0]["created_at"]
+        self.todos.write_text(dump_yaml(data), encoding="utf-8")
+        invalid = self.run_state("todos", "validate", "--file", self.todos)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertNotIn("Traceback", invalid.stderr)
+
+        self.init_requirements()
+        added = self.run_state(
+            "requirements", "upsert", *self.session_arguments(), "--text", "校验要求",
+        )
+        self.assertEqual(added.returncode, 0, added.stderr)
+        data = load_yaml(self.requirements)
+        data["requirements"][0]["scope"] = []
+        data["response_review"] = {
+            "reviewed_at": "2026-11-15T00:00:00Z",
+            "results": [{"requirement_id": "REQ-001", "status": [], "evidence": "无效状态"}],
+        }
+        self.requirements.write_text(dump_yaml(data), encoding="utf-8")
+        invalid = self.run_state("requirements", "validate", "--file", self.requirements)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertNotIn("Traceback", invalid.stderr)
+
     def test_concurrent_additions_do_not_lose_updates(self):
         self.init_todos()
 

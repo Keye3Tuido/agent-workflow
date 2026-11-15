@@ -6,29 +6,15 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import sqlite3
 from pathlib import Path, PurePosixPath
-from types import SimpleNamespace
 from typing import Any
 
 from check_doc_forest import ConfigError, ForestChecker, normalize_project_path
-from context_cache import ContextCache
 from module_model import module_dependencies
 
 
 def prepare(root: Path, use_cache: bool = True, cache_path: Path | None = None):
-    cache_path = cache_path or root / ".cache" / "agent-workflow" / "context.sqlite"
-    if use_cache and cache_path.is_file():
-        try:
-            info_cache = ContextCache.load_info(cache_path)
-            return SimpleNamespace(
-                root=root.resolve(),
-                expected=set(info_cache),
-                info_cache=info_cache,
-                source_path=lambda relative: root.resolve() if relative == "." else root.resolve() / relative,
-            )
-        except (sqlite3.Error, json.JSONDecodeError):
-            pass
+    # Keep cache arguments for CLI compatibility; always read authoritative metadata.
     checker = ForestChecker(root)
     checker.enumerate_expected()
     for relative in checker.expected:
