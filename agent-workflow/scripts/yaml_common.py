@@ -93,7 +93,7 @@ def dump_yaml(data: Any) -> str:
     )
 
 
-def atomic_write_yaml(path: Path, data: Any) -> None:
+def atomic_write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     mode = path.stat().st_mode if path.exists() else None
     temporary_name = None
@@ -108,7 +108,7 @@ def atomic_write_yaml(path: Path, data: Any) -> None:
             delete=False,
         ) as temporary:
             temporary_name = temporary.name
-            temporary.write(dump_yaml(data))
+            temporary.write(text)
             temporary.flush()
             os.fsync(temporary.fileno())
         if mode is not None:
@@ -127,6 +127,10 @@ def atomic_write_yaml(path: Path, data: Any) -> None:
                 os.unlink(temporary_name)
             except FileNotFoundError:
                 pass
+
+
+def atomic_write_yaml(path: Path, data: Any) -> None:
+    atomic_write_text(path, dump_yaml(data))
 
 
 @contextmanager

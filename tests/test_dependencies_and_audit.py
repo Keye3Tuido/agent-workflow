@@ -236,6 +236,41 @@ class DependencyAndAuditTests(unittest.TestCase):
         self.assertEqual(failure["error_type"], "YamlError")
         self.assertEqual(failure["error"], "状态或数据校验失败")
 
+    def test_audit_compacts_to_recent_complete_operations(self):
+        self.init_todos()
+        for index in range(99):
+            self.add_task(f"滚动审计任务 {index}")
+        events = self.events(self.todos_audit)
+        operation_ids = list(dict.fromkeys(event["operation_id"] for event in events))
+        self.assertEqual(len(operation_ids), 100)
+        self.assertEqual(len(events), 200)
+
+        self.add_task("触发审计压缩")
+        events = self.events(self.todos_audit)
+        operation_ids = list(dict.fromkeys(event["operation_id"] for event in events))
+        self.assertEqual(len(operation_ids), 50)
+        self.assertEqual(len(events), 100)
+        for operation_id in operation_ids:
+            self.assertEqual(
+                [event["event"] for event in events if event["operation_id"] == operation_id],
+                ["prepared", "committed"],
+            )
+        committed = [event for event in events if event["event"] == "committed"]
+        self.assertEqual(committed[-1]["target_id"], "TASK-100")
+        self.assertEqual(len(load_yaml(self.todos)["tasks"]), 100)
+
+        failed = self.run_state(
+            "todos", "transition", "--file", self.todos,
+            "--id", "TASK-100", "--to", "done", "--verification", "非法迁移",
+        )
+        self.assertEqual(failed.returncode, 1)
+        events = self.events(self.todos_audit)
+        operation_ids = list(dict.fromkeys(event["operation_id"] for event in events))
+        self.assertEqual(len(operation_ids), 51)
+        self.assertEqual(len(events), 102)
+        self.assertEqual([event["event"] for event in events[-2:]], ["prepared", "failed"])
+        self.assertEqual(events[-1]["operation_id"], events[-2]["operation_id"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append-only JSONL operation audit for shared state files."""
+"""Rolling JSONL operation audit for shared state files."""
 
 from __future__ import annotations
 
@@ -10,7 +10,11 @@ import uuid
 from pathlib import Path
 from typing import Any, Callable
 
-from yaml_common import file_lock, load_yaml, utc_now
+from yaml_common import atomic_write_text, file_lock, load_yaml, utc_now
+
+
+AUDIT_MAX_OPERATIONS = 100
+AUDIT_RETAINED_OPERATIONS = 50
 
 
 def audit_path(state_path: Path, kind: str) -> Path:
@@ -25,6 +29,27 @@ def append_event(path: Path, event: dict[str, Any]) -> None:
         target.write(json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n")
         target.flush()
         os.fsync(target.fileno())
+
+
+def compact_audit(path: Path) -> None:
+    """Keep the newest complete operations without splitting their events."""
+    if not path.is_file():
+        return
+    records = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            return
+        if not isinstance(event, dict) or not isinstance(event.get("operation_id"), str):
+            return
+        records.append((event["operation_id"], line))
+    operation_ids = list(dict.fromkeys(operation_id for operation_id, _ in records))
+    if len(operation_ids) <= AUDIT_MAX_OPERATIONS:
+        return
+    retained_ids = set(operation_ids[-AUDIT_RETAINED_OPERATIONS:])
+    retained = [f"{line}\n" for operation_id, line in records if operation_id in retained_ids]
+    atomic_write_text(path, "".join(retained))
 
 
 def metadata(path: Path, kind: str, arguments: Any) -> dict[str, Any]:
@@ -92,6 +117,7 @@ def perform(
             }
             try:
                 append_event(log_path, failure)
+                compact_audit(log_path)
             except OSError:
                 pass
             raise
@@ -104,4 +130,5 @@ def perform(
         if isinstance(result, dict) and result.get("id"):
             completed["target_id"] = result["id"]
         append_event(log_path, completed)
+        compact_audit(log_path)
         return result

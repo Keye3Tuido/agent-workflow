@@ -36,7 +36,7 @@ Windows：
 | GitHub Copilot | 宿主指导设置；项目用 `AGENTS.md` | 直接读取共享 Skill |
 | OpenCode | `$HOME/.config/opencode/AGENTS.md` | 直接读取共享 Skill |
 
-共享目录是权威源，不代表宿主自动加载。按宿主支持的方式接入，Skill 只留一个实体。路径详情见 `references/paths.md`。
+共享目录是权威源，不代表宿主自动加载。按宿主支持的方式接入，Skill 只留一个实体。路径和文件生命周期见 `<共享Skill>/references/paths.md`。
 
 ## 会话开始检查更新
 
@@ -61,9 +61,9 @@ python3 <共享Skill>/scripts/update_skill.py check
 2. 状态只能 `todo → working → done → accepted`。开工前进入 `working`，验证后进入 `done`，仅用户明确验收后进入 `accepted`。
 3. 开工前所有直接依赖必须为 `done` 或 `accepted`；拒绝循环依赖。仍被依赖的任务不得普通删除，`clean-accepted` 可清理已验收任务及其已满足依赖。
 4. 分别记录执行者与开始时间、完成时间与验证证据、验收时间与用户依据。阻塞原因独立记录。
-5. 用户取消的任务直接删除。每次 `git commit` 前删除全部 `accepted`，再校验 YAML 和森林。
+5. 用户取消的任务直接删除。每次 `git commit` 前删除全部 `accepted`，再校验 YAML 和森林；该操作不清空审计，审计保留或删除按 `<共享Skill>/references/paths.md` 的生命周期规则执行。
 
-状态写操作与审计共用同一文件锁，按 `prepared → committed` 或 `prepared → failed` 追加 JSONL；纯读取和 `validate` 不写日志。任务审计位于项目根目录 `.agent-workflow-audit.jsonl`，要求审计位于会话目录 `requirements-audit.jsonl`。记录操作、执行者、会话、目标、状态迁移和成功时的状态 SHA-256；失败事件只写错误类型和脱敏类别，不记录原始异常文本、要求正文、源码或凭证。状态已替换但 `committed` 追加失败时，重试前核对状态与日志。
+状态写操作与审计共用同一文件锁，按 `prepared → committed` 或 `prepared → failed` 写入滚动 JSONL；超过 100 个完整操作时清理到最近 50 个，旧操作自动淘汰。纯读取和 `validate` 不写日志。任务审计位于项目根目录 `.agent-workflow-audit.jsonl`，要求审计位于会话目录 `requirements-audit.jsonl`。记录操作、执行者、会话、目标、状态迁移和成功时的状态 SHA-256；失败事件只写错误类型和脱敏类别，不记录原始异常文本、要求正文、源码或凭证。状态已替换但审计写入或压缩失败时，重试前核对状态与日志。
 
 ## 检查文档森林
 

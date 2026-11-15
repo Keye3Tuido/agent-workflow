@@ -7,6 +7,8 @@ description: Maintain session requirements, project todos, and .doc-forest summa
 
 常驻 `AGENTS.md` 保存规则；本 Skill 提供操作。脚本检查结构和定位证据，AI 核验语义。不使用 Hook，不区分主、子 Agent 权限。
 
+`assets/AGENTS.template.md` 是权威指导模板。源仓库任何目录都不保留可自动加载的 `AGENTS.md`，也不保存自身的 todos、审计或文档森林；只有应用工作流的目标项目才使用这些状态文件。文件持久化、维护和清理规则见 [paths.md](references/paths.md)。
+
 ## 会话开始检查更新
 
 宿主加载规则后、实质工作前运行：
@@ -15,7 +17,7 @@ description: Maintain session requirements, project todos, and .doc-forest summa
 python3 <共享Skill>/scripts/update_skill.py check
 ```
 
-固定查询 `https://github.com/Keye3Tuido/agent-workflow/releases/latest`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。更新后重新加载 Skill。查询优先使用已登录的 `gh`，无 `gh` 时使用公开 API；失败时使用当前版本并报告，不重复请求。
+固定查询 `https://github.com/Keye3Tuido/agent-workflow/releases/latest`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。更新后重新加载 Skill。Skill 更新不自动覆盖共享 `AGENTS.md`，模板变化须按宿主规则复核接入。查询优先使用已登录的 `gh`，无 `gh` 时使用公开 API；失败时使用当前版本并报告，不重复请求。
 
 ## 恢复状态
 
@@ -53,7 +55,7 @@ python3 scripts/state_files.py todos clean-accepted --file <文件>
 
 任务开工前，所有直接依赖必须为 `done` 或 `accepted`。循环依赖会使校验失败；仍被其他任务依赖时不得普通删除。`clean-accepted` 可清理已验收任务及其已满足依赖。
 
-状态写命令与审计共用同一文件锁：写入前追加 `prepared`，成功后追加带状态 SHA-256 的 `committed`，失败追加 `failed`；纯读取和 `validate` 不写日志。项目任务日志为 `.agent-workflow-audit.jsonl`，会话要求日志为会话目录的 `requirements-audit.jsonl`。日志记录操作、执行者、会话、目标和状态迁移；失败事件只写错误类型和脱敏类别，不记录原始异常文本、要求正文、源码或凭证。任务执行者可由 `AGENT_WORKFLOW_SESSION_ID` 标识。若状态已替换但 `committed` 追加失败，命令会报错，重试前须核对状态与日志。
+状态写命令与审计共用同一文件锁：写入前追加 `prepared`，成功后追加带状态 SHA-256 的 `committed`，失败追加 `failed`。超过 100 个完整操作时清理到最近 50 个，旧操作自动淘汰；纯读取和 `validate` 不写日志。项目任务日志为项目根目录的 `.agent-workflow-audit.jsonl`，会话要求日志为会话目录的 `requirements-audit.jsonl`。日志记录操作、执行者、会话、目标和状态迁移；失败事件只写错误类型和脱敏类别，不记录原始异常文本、要求正文、源码或凭证。任务执行者可由 `AGENT_WORKFLOW_SESSION_ID` 标识。若状态已替换但审计写入或压缩失败，命令会报错，重试前须核对状态与日志。
 
 ## 定位任务上下文
 
@@ -88,14 +90,14 @@ python3 scripts/check_doc_forest.py --root <项目根目录> --path <相对路�
 
 ## 提交前
 
-确认 `accepted` 均有用户验收依据，运行 `todos clean-accepted`，再校验状态和森林。不修改 Git 忽略规则，不自动暂存或提交。
+确认 `accepted` 均有用户验收依据，运行 `todos clean-accepted`，再校验状态和森林。该命令只清理已验收任务，不清空审计；审计在每次写入后滚动压缩，保留或删除规则见 [paths.md](references/paths.md)。不修改 Git 忽略规则，不自动暂存或提交。
 
 ## 安装
 
-先读 [paths.md](references/paths.md)。权威 Skill 默认位于 `$HOME/.agents/skills/agent-workflow/`，Windows 使用 `%USERPROFILE%\.agents\skills\agent-workflow\`。
+先读 [paths.md](references/paths.md)。权威 Skill 默认位于 `$HOME/.agents/skills/agent-workflow/`，Windows 使用 `%USERPROFILE%\.agents\skills\agent-workflow\`。`assets/AGENTS.template.md` 是指导模板，须按宿主支持的方式接入 `$HOME/.agents/AGENTS.md` 和宿主指导入口，不覆盖已有规则。
 
 ```bash
 python3 scripts/install_links.py --shared-root ~/.agents --host-skill-dir ~/.claude/skills
 ```
 
-重复 `--host-skill-dir` 接入多个宿主。已有实体默认不覆盖，确认复用时加 `--use-existing`。不支持目录链接时明确报告，不复制第二份。`AGENTS.md` 仍须接入宿主实际指导入口。
+重复 `--host-skill-dir` 接入多个宿主。已有实体默认不覆盖，确认复用时加 `--use-existing`。不支持目录链接时明确报告，不复制第二份。链接安装不等于指导文件已加载。

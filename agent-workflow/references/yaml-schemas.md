@@ -142,7 +142,7 @@ tasks:
 
 ## 6. 状态脚本命令
 
-修改命令在同一文件锁内读取、校验、修改、再次校验、原子替换并追加审计；校验命令只读且不写审计。审计按 `prepared → committed` 或 `prepared → failed` 记录，成功事件包含状态文件 SHA-256。任务日志位于项目根目录 `.agent-workflow-audit.jsonl`，要求日志位于会话目录 `requirements-audit.jsonl`。失败事件只写错误类型和脱敏类别，日志不保存原始异常文本、要求正文、源码或凭证；若状态已替换但成功事件追加失败，重试前须核对状态与日志。
+修改命令在同一文件锁内读取、校验、修改、再次校验、原子替换并维护审计；校验命令只读且不写审计。审计按 `prepared → committed` 或 `prepared → failed` 记录，成功事件包含状态文件 SHA-256。超过 100 个完整操作时清理到最近 50 个，旧操作自动淘汰。任务日志位于项目根目录 `.agent-workflow-audit.jsonl`，要求日志位于会话目录 `requirements-audit.jsonl`。失败事件只写错误类型和脱敏类别，日志不保存原始异常文本、要求正文、源码或凭证；若状态已替换但审计写入或压缩失败，重试前须核对状态与日志。`clean-accepted` 和 `git commit` 不额外清空审计，保留或删除规则见 [paths.md](paths.md)。
 
 ### 要求文件
 

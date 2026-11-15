@@ -115,7 +115,11 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(set(info), {"schema_version", "purpose", "contents_summary"})
 
     def test_agents_markers_paths_expression_and_gitignore_rule(self):
-        text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        text = (SKILL / "assets" / "AGENTS.template.md").read_text(encoding="utf-8")
+        self.assertFalse(list(ROOT.rglob("AGENTS.md")), "源仓库不得包含可自动加载的 AGENTS.md")
+        for relative in (".todos.yml", ".agent-workflow-audit.jsonl", ".doc-forest.yml", ".doc-forest"):
+            self.assertFalse((ROOT / relative).exists(), f"源仓库不得自我应用工作流: {relative}")
+        self.assertIn("文件持久化、维护与清理", (SKILL / "references" / "paths.md").read_text(encoding="utf-8"))
         self.assertEqual(text.count("<!-- agent-workflow:start -->"), 1)
         self.assertEqual(text.count("<!-- agent-workflow:end -->"), 1)
         self.assertIn("$HOME/.agents/AGENTS.md", text)
