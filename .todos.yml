@@ -1,5 +1,5 @@
 schema_version: '1.0'
-updated_at: '2026-11-15T00:57:25Z'
+updated_at: '2026-11-15T00:57:57Z'
 next_task_number: 17
 tasks:
 - id: TASK-001
@@ -201,8 +201,11 @@ tasks:
   acceptance_criteria:
   - 移除环境专属措辞，加入版本查询、按需下载和安全更新
   - 项目转为 public，发布 v1.0.0 并验证最新 release 查询
-  status: working
+  status: done
   created_at: '2026-11-15T00:51:34Z'
-  updated_at: '2026-11-15T00:51:34Z'
+  updated_at: '2026-11-15T00:57:57Z'
   executor: conversation-9bcdcba9
   started_at: '2026-11-15T00:51:34Z'
+  verification:
+  - 项目已公开；v1.0.0 release 已发布并更新资产；MIT 协议已包含；更新查询成功且版本一致
+  completed_at: '2026-11-15T00:57:57Z'
