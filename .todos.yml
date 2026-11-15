@@ -1,5 +1,5 @@
 schema_version: '1.0'
-updated_at: '2026-11-15T11:12:39Z'
+updated_at: '2026-11-15T11:16:04Z'
 next_task_number: 26
 tasks:
 - id: TASK-001
@@ -266,8 +266,12 @@ tasks:
   acceptance_criteria:
   - 发布前 69 项回归、森林检查和本地包验证通过
   - 代码提交并推送，GitHub Release 资产与更新查询核验通过
-  status: working
+  status: done
   created_at: '2026-11-15T11:12:23Z'
-  updated_at: '2026-11-15T11:12:23Z'
+  updated_at: '2026-11-15T11:16:04Z'
   executor: conversation-9bcdcba9
   started_at: '2026-11-15T11:12:23Z'
+  verification:
+  - 提交 9a28514 已推送，69 项回归和森林检查通过
+  - GitHub v1.1.0 已公开，资产 SHA-256 30c4824c7bc0694389b41e489e0970c039913db33e16b12c74490baabac70751，下载一致且更新查询通过
+  completed_at: '2026-11-15T11:16:04Z'
