@@ -1,0 +1,195 @@
+schema_version: '1.0'
+updated_at: '2026-11-15T00:22:48Z'
+next_task_number: 16
+tasks:
+- id: TASK-001
+  title: 实现通用 AGENTS.md、共享 Skill 和 YAML 规范
+  acceptance_criteria:
+  - 提示词、Skill、模板与格式符合设计
+  status: done
+  created_at: '2026-11-14T11:15:28Z'
+  updated_at: '2026-11-14T12:17:28Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T11:15:28Z'
+  completed_at: '2026-11-14T11:34:34Z'
+  verification:
+  - 19 项测试通过
+- id: TASK-002
+  title: 实现文档森林检查和共享状态脚本
+  acceptance_criteria:
+  - 检查器支持只读、局部、白名单、排除和停止递归
+  - 状态脚本支持锁定、原子替换和状态迁移
+  status: done
+  created_at: '2026-11-14T11:15:28Z'
+  updated_at: '2026-11-14T12:17:28Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T11:34:34Z'
+  completed_at: '2026-11-14T11:34:34Z'
+  verification:
+  - 森林、状态与并发测试通过
+- id: TASK-003
+  title: 实现共享 Skill 的宿主链接安装逻辑
+  acceptance_criteria:
+  - 单一权威实体，宿主链接不覆盖现有目录
+  status: done
+  created_at: '2026-11-14T11:15:28Z'
+  updated_at: '2026-11-14T12:17:28Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T11:34:34Z'
+  completed_at: '2026-11-14T11:34:34Z'
+  verification:
+  - 链接与冲突保护测试通过
+- id: TASK-004
+  title: 补充并运行自动化测试
+  acceptance_criteria:
+  - 全部自动化测试通过
+  status: done
+  created_at: '2026-11-14T11:15:28Z'
+  updated_at: '2026-11-14T12:17:28Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T11:34:34Z'
+  completed_at: '2026-11-14T11:34:34Z'
+  verification:
+  - 19 项测试通过
+- id: TASK-005
+  title: 维护文档森林并打包 Skill
+  acceptance_criteria:
+  - 森林检查通过并生成 .skill 包
+  status: done
+  created_at: '2026-11-14T11:15:28Z'
+  updated_at: '2026-11-14T12:17:28Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T11:34:34Z'
+  completed_at: '2026-11-14T11:37:16Z'
+  verification:
+  - 19 项测试、森林检查及安装包链接运行通过
+- id: TASK-006
+  title: 明确全局路径并整合表达与文档摘要规则
+  acceptance_criteria:
+  - 明确共享、宿主和本机路径
+  - 提示词纳入 clear-expression
+  - 摘写规范参考 doc-system 而不复制
+  status: done
+  created_at: '2026-11-14T11:43:54Z'
+  updated_at: '2026-11-14T12:17:28Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T11:43:54Z'
+  completed_at: '2026-11-14T11:50:50Z'
+  verification:
+  - 19 项测试、森林检查及安装包链接运行通过
+- id: TASK-007
+  title: 清理临时文件并初始化 Git 仓库
+  acceptance_criteria:
+  - 清理临时文件，保留项目产物
+  - 初始化 main，不暂存或提交
+  status: done
+  created_at: '2026-11-14T11:54:10Z'
+  updated_at: '2026-11-14T12:17:28Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T11:54:10Z'
+  completed_at: '2026-11-14T11:55:02Z'
+  verification:
+  - 19 项测试和森林检查通过；main 已初始化
+- id: TASK-008
+  title: 精简全部文档与描述
+  acceptance_criteria:
+  - 保留路径、规则、状态语义和关键约束，删除重复与空泛表述
+  - 回归测试、完整森林检查和重新打包均通过
+  status: done
+  created_at: '2026-11-14T12:00:08Z'
+  updated_at: '2026-11-14T12:33:42Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T12:00:08Z'
+  completed_at: '2026-11-14T12:33:42Z'
+  verification:
+  - 主要 Markdown 702 行减至 495 行；19 项测试、森林检查及安装包链接运行通过
+- id: TASK-009
+  title: 精简 requirements、todos 与 info 结构
+  acceptance_criteria:
+  - 省略默认值和空字段，消除父子目录重复描述
+  - 脚本、现有 YAML、规范和测试同步更新
+  status: done
+  created_at: '2026-11-14T13:28:02Z'
+  updated_at: '2026-11-14T13:40:55Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T13:28:03Z'
+  verification:
+  - 三种 YAML 精简完成；删除 46 个空字段；24 项测试通过
+  completed_at: '2026-11-14T13:40:55Z'
+- id: TASK-010
+  title: 实现按需求定位上下文的只读工具
+  acceptance_criteria:
+  - 按任务关键词、摘要、路径和源码匹配输出候选文件及行号
+  - 不保存派生索引或依赖图，并报告扫描范围与遗漏
+  status: done
+  created_at: '2026-11-14T13:28:03Z'
+  updated_at: '2026-11-14T13:51:07Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T13:40:55Z'
+  verification:
+  - 26 项测试通过；定位器输出源码行号、相关测试和扫描边界；安装包链接运行通过
+  completed_at: '2026-11-14T13:51:07Z'
+- id: TASK-011
+  title: 实现功能模块职责、直接关系与检索扩展
+  acceptance_criteria:
+  - 目录或文件模块可按需声明边界、入口和直接依赖
+  - 架构视图支持局部依赖与反向依赖，定位器复用现有字段并补充相关模块
+  - 完整测试、森林检查和安装包运行通过
+  status: done
+  created_at: '2026-11-14T14:16:32Z'
+  updated_at: '2026-11-14T14:54:36Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T14:16:32Z'
+  verification:
+  - 31 项测试通过；真实模块直接和反向依赖验证通过；安装包架构与定位运行通过
+  completed_at: '2026-11-14T14:54:36Z'
+- id: TASK-012
+  title: 在 SLRelease 上对比上下文检索效果
+  acceptance_criteria:
+  - 对通知、内购、传送带和应用启动四类任务运行基线、doc-system 与 Forest 对照
+  - 记录相关命中、输出大小、扫描范围、相关测试与模块关系
+  status: done
+  created_at: '2026-11-14T15:46:30Z'
+  updated_at: '2026-11-14T16:01:51Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T15:46:30Z'
+  verification:
+  - 完成 SLRelease 四任务对照；33 项测试通过；报告和原始结果已保存；安装包定位验证通过
+  completed_at: '2026-11-14T16:01:51Z'
+- id: TASK-013
+  title: 优化 Forest 检索速度、必要覆盖与候选精度
+  acceptance_criteria:
+  - SLRelease 对照中 Forest 总耗时低于无摘要检索
+  - 必要位置覆盖率不低于基线且无关候选不增加
+  - 冷启动、连续任务、缓存失效和全部回归均有实测
+  status: done
+  created_at: '2026-11-14T17:05:52Z'
+  updated_at: '2026-11-14T17:31:29Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T17:05:52Z'
+  verification:
+  - SLRelease 三次中位数：首次 549.44ms、缓存 290.56ms，基线 588.75ms；必要覆盖 25/25；无关候选 7→1；37 项测试通过
+  completed_at: '2026-11-14T17:31:29Z'
+- id: TASK-014
+  title: 清空缓存后复测 SLRelease 并总结改造
+  acceptance_criteria:
+  - 从零副本和空缓存运行四类任务并保存本轮结果
+  - 复测后清理副本与缓存，原项目不改动
+  status: done
+  created_at: '2026-11-14T23:39:50Z'
+  updated_at: '2026-11-14T23:54:46Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-14T23:39:50Z'
+  verification:
+  - 空缓存复测完成：基线 675.29ms，Forest 首次 625.01ms，缓存连续任务 346.22ms；必要覆盖 25/25；副本与缓存已清理
+  completed_at: '2026-11-14T23:54:46Z'
+- id: TASK-015
+  title: 清理、上传项目并归档旧仓库
+  acceptance_criteria:
+  - 项目检查通过并上传 agent-workflow
+  - think-then-verify 与 clear-expression 已归档
+  status: working
+  created_at: '2026-11-15T00:22:19Z'
+  updated_at: '2026-11-15T00:22:19Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-15T00:22:19Z'

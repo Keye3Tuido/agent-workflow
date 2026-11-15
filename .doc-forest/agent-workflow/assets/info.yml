@@ -1,0 +1,12 @@
+schema_version: "1.0"
+purpose: "提供初始化 YAML 模板"
+contents_summary: "覆盖森林配置、目录信息、会话要求和项目任务"
+files:
+  - name: "doc-forest.yml"
+    purpose: "默认写入豁免与排除配置"
+  - name: "info.yml"
+    purpose: "目录信息基础字段"
+  - name: "requirements.yml"
+    purpose: "会话要求与本轮复核结构"
+  - name: "todos.yml"
+    purpose: "空任务清单与稳定编号"

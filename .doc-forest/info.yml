@@ -1,0 +1,13 @@
+schema_version: "1.0"
+purpose: "开发并分发通用 Agent 工作流"
+contents_summary: "提示词、Skill、测试、任务与森林配置"
+files:
+  - name: ".doc-forest.yml"
+    purpose: "配置写入豁免、目录白名单与排除规则"
+  - name: ".todos.yml"
+    purpose: "记录任务、验收条件、状态和证据"
+  - name: "AGENTS.md"
+    purpose: "规定工作流、全局路径和表达要求"
+directories:
+  - name: "agent-workflow"
+  - name: "tests"

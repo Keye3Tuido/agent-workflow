@@ -1,0 +1,115 @@
+<!-- agent-workflow:start -->
+# Agent workflow：要求、任务与文档森林
+
+保持用户目标、明确要求、实际证据和待办。用户指令及宿主高优先级规则优先；本区块不扩大授权。
+
+## 位置与路径
+
+| 位置 | 内容 |
+| --- | --- |
+| Agent 自有全局目录 | 宿主指导入口、Skill 链接和专属配置 |
+| Agent 共享全局目录 | 权威 `AGENTS.md` 和 `skills/agent-workflow/` |
+| 项目根目录 | 项目 `AGENTS.md`、`.doc-forest.yml`、`.doc-forest/`、`.todos.yml` |
+| 会话目录 | 当前会话的 `requirements.yml` 和运行状态 |
+
+```text
+macOS／Linux：
+$HOME/.agents/AGENTS.md
+$HOME/.agents/skills/agent-workflow/
+$HOME/.local/state/agent-workflow/<session-id>/requirements.yml
+
+Windows：
+%USERPROFILE%\.agents\AGENTS.md
+%USERPROFILE%\.agents\skills\agent-workflow\
+%LOCALAPPDATA%\agent-workflow\<session-id>\requirements.yml
+
+本机示例：
+/Users/user01/.agents/AGENTS.md
+/Users/user01/.agents/skills/agent-workflow/
+/Users/user01/.local/state/agent-workflow/<session-id>/requirements.yml
+```
+
+| 宿主 | 全局指导入口 | Skill 入口 |
+| --- | --- | --- |
+| Codex | `$HOME/.codex/AGENTS.md` | 直接读取共享 Skill |
+| Claude Code | `$HOME/.claude/CLAUDE.md` | `$HOME/.claude/skills/agent-workflow` → 共享 Skill |
+| Cursor | Settings → Rules → User Rules；项目用 `AGENTS.md` | 共享 Skill 或 `$HOME/.cursor/skills/agent-workflow` 链接 |
+| Gemini CLI | `$HOME/.gemini/GEMINI.md` | 共享 Skill 或 `$HOME/.gemini/skills/agent-workflow` 链接 |
+| GitHub Copilot | 宿主指导设置；项目用 `AGENTS.md` | 直接读取共享 Skill |
+| OpenCode | `$HOME/.config/opencode/AGENTS.md` | 直接读取共享 Skill |
+
+共享目录是权威源，不代表宿主自动加载。按宿主支持的方式接入，Skill 只留一个实体。路径详情见 `references/paths.md`。
+
+## 每轮维护要求
+
+1. 收到消息后、实质处理前读取 `requirements.yml`。使用宿主会话目录或 `AGENT_WORKFLOW_SESSION_DIR`，核对会话 ID 和项目根目录。
+2. 记录明确要求、禁止项、修改和取消内容。取消或到期即删除，ID 不复用；临时要求注明范围和失效条件。建议不得冒充用户要求。
+3. 文件只存项目外的当前会话目录，并在会话中提供入口。没有可用目录时说明缺口，不得写入项目。
+4. 答复前复核要求与实际行为；先修正，无法满足则说明要求、原因和缺口。只留本轮结果，不存隐藏思维、凭证或无关聊天。
+
+## 维护任务
+
+1. 读取 `.todos.yml`，登记实际任务；无新任务不制造记录。
+2. 状态只能 `todo → working → done → accepted`。开工前进入 `working`，验证后进入 `done`，仅用户明确验收后进入 `accepted`。
+3. 分别记录执行者与开始时间、完成时间与验证证据、验收时间与用户依据。阻塞原因独立记录。
+4. 用户取消的任务直接删除。每次 `git commit` 前删除全部 `accepted`，再校验 YAML 和森林。
+
+## 检查文档森林
+
+仅在需要项目写入的对话自动检查：首次写入前一次，写入完成后一次；只读对话不自动检查。用户要求或任务需要时可额外执行。支持完整检查和 `--path` 局部检查。
+
+```bash
+python3 scripts/check_doc_forest.py --root <项目根目录>
+python3 scripts/check_doc_forest.py --root <项目根目录> --path <相对路径> --format json
+```
+
+`write_check.excluded_paths` 中的维护写入不重复触发检查；`requirements.yml` 位于项目外，不加入该列表。脚本只读并报告结构问题，AI 负责语义维护，结构通过不等于描述准确。
+
+## 按需求定位上下文
+
+不要预读整棵森林。先从需求提取具体标识、文件名和领域词，再运行：
+
+```bash
+python3 scripts/forest_context.py --root <项目根目录> --task <需求> --keyword <关键词> --max-results 10
+```
+
+已知路径时添加 `--path <相对路径>`。定位器输出候选文件、核心成员、匹配原因、相关测试、相关模块和源码行号，不返回整份文件。检索范围包括现有职责、边界、入口、依赖目标和原因。嵌套文件继承最近模块根目录的元数据。文件必须自身命中路径、专属说明、源码或路径锚点；目录摘要仅用于加权。相关测试按命名对应及同模块关键词证据补充。按输出定向读取源码并核验，关键词匹配不等于完整覆盖。派生 SQLite 缓存仅写 `.cache/agent-workflow/`，可删除重建，不进入 Forest，不修改源码或 Git 忽略规则；`--no-cache` 可禁用。
+
+需要模块级架构时，按目录或文件路径查看局部直接关系：
+
+```bash
+python3 scripts/forest_architecture.py --root <项目根目录> --path <模块路径>
+```
+
+## 森林规则
+
+- 每个纳入目录对应一个镜像目录，每层只有一个 `info.yml`，不得混入其他文件。
+- `info.yml` 只写当前目录的 `purpose`、`contents_summary` 和有维护价值的文件说明。目录路径由位置推导，不重复保存。
+- 目录或文件都可作为功能模块，按需添加 `boundary`、`entry`、`depends_on`。只记录直接架构依赖及原因，不记录模块内部调用、反向或传递依赖；`kind` 默认 `call`，可选 `config`、`data`、`event`。
+- `directories` 完整列出有效直接子目录，但只写 `name`；子目录说明保存在其自身 `info.yml`，不在父级重复。
+- 默认省略空列表和默认值。仅在需要停止递归时写 `recurse: false`：保留当前节点、停止镜像后代，且该节点不列下级目录。
+- `forest.allowlist` 非空时仅保留目标、后代和必要祖先；`forest.excluded_paths` 整棵排除且优先。依赖、Git 和构建目录按配置处理。
+- 不跟随目录符号链接；局部检查须解析祖先规则，不得误报主动裁剪的后代。
+- `requirements` 默认 `required + session`，`todos` 的空字段和空列表省略，状态字段按实际需要出现。
+- 写 `info.yml` 前读 `references/content-guidance.md`；编辑 YAML 前读 `references/yaml-schemas.md`。
+
+## 写入与 Git
+
+- 所有 Agent 遵循同一规则，不区分主、子 Agent 权限。
+- 共享 YAML 的读取、修改、写回全程加锁；同目录临时文件刷新后原子替换。原子替换不能替代锁。
+- 不使用 Hook，不声称提示词能硬性保证触发。
+- 不主动把 `.doc-forest/`、`.doc-forest.yml`、`.todos.yml` 加入 `.gitignore`、`.git/info/exclude` 等忽略规则；已有规则只报告，不擅改。不自动暂存或提交。
+- 行动和答复均以实际证据为准，执行后核验真实结果。
+
+## 以读者为中心的信息表达
+
+适用于回复、文档、界面文字、代码注释和其他交付物：
+
+1. **明确读者与用途**：选择必要的术语、背景和深度，让成品独立可用；制作经过仅在协作或溯源需要时保留。
+2. **说明当前事实**：写清能力、条件、操作、结果和必要原因；否定、例外和对比须有助于理解或行动。
+3. **保留有效信息**：删除重复、空话和无关背景；按结论、操作、条件、原因、细节组织，条件靠近操作，限制靠近能力。
+4. **适配载体**：文档支持理解与执行，界面文字说明状态与动作，注释解释维护意图与约束，协作回复说明改动、验证和待办。
+5. **保持语义完整**：保留范围、前提、例外、时间和确定程度，区分事实、推断、建议与待核验信息，不为肯定表达而虚构。
+6. **以确认设计为准**：无用途的未发布旧设计默认移除；已发布设计存在兼容依赖时，破坏性变更前说明影响并取得确认。
+7. **交付前静默复核**：检查信息是否明确可执行，是否仍有无关过程、重复或歧义，是否遗漏事实、条件、原因和边界。所有 Agent 均适用。
+<!-- agent-workflow:end -->

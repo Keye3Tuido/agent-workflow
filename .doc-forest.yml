@@ -1,0 +1,14 @@
+schema_version: "1.0"
+write_check:
+  excluded_paths:
+    - ".doc-forest"
+    - ".todos.yml"
+forest:
+  allowlist: []
+  excluded_paths:
+    - ".git"
+    - "node_modules"
+    - ".venv"
+    - "venv"
+    - "dist"
+    - "tmp"
