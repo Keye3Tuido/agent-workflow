@@ -4,6 +4,8 @@ contents_summary: "用临时夹具覆盖正常流程、错误、模块关系、�
 files:
   - name: "test_context_cache.py"
     purpose: "测试缓存构建、命中、失效、禁用、模块聚焦和核心成员"
+  - name: "test_context_edge_cases.py"
+    purpose: "测试特殊字符、缓存损坏、文件增删、并发、符号链接和核心成员数量"
   - name: "test_doc_forest.py"
     purpose: "测试检查范围、排除、白名单、递归、模块字段和 YAML 错误"
   - name: "test_forest_architecture.py"

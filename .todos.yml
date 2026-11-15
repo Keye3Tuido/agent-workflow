@@ -1,6 +1,6 @@
 schema_version: '1.0'
-updated_at: '2026-11-15T01:29:23Z'
-next_task_number: 19
+updated_at: '2026-11-15T01:56:25Z'
+next_task_number: 21
 tasks:
 - id: TASK-001
   title: 实现通用 AGENTS.md、共享 Skill 和 YAML 规范
@@ -235,3 +235,26 @@ tasks:
   verification:
   - CardSort 公会聚焦修正为 guild_sdk，前五 0→5；两项目八项任务必要覆盖 100%；43 项测试通过；v1.0.1 已发布
   completed_at: '2026-11-15T01:29:23Z'
+- id: TASK-019
+  title: 增加新用例并停止发布
+  acceptance_criteria:
+  - 覆盖缓存异常、短关键词、特殊字符、目录变化和真实项目新任务
+  - 仅本地测试和记录，不提交、不发布
+  status: done
+  created_at: '2026-11-15T01:33:07Z'
+  updated_at: '2026-11-15T01:39:23Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-15T01:33:08Z'
+  verification:
+  - 56 项测试通过；CardSort 四新任务必要覆盖 100%；核心成员截断已本地修复；结果仅本地保存，未提交或发布
+  completed_at: '2026-11-15T01:39:23Z'
+- id: TASK-020
+  title: 清理发布并验证多 Agent 协同
+  acceptance_criteria:
+  - 清理无关产物并发布当前修复版本
+  - 实际验证共享 todos、独立 requirements、并发写入、验证证据与验收清理
+  status: working
+  created_at: '2026-11-15T01:55:40Z'
+  updated_at: '2026-11-15T01:55:40Z'
+  executor: conversation-9bcdcba9
+  started_at: '2026-11-15T01:55:40Z'

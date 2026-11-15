@@ -488,7 +488,7 @@ class ContextFinder:
                     "source_module": self.module_prefix(path),
                 })
         result.sort(key=lambda item: item["path"])
-        return result[:20]
+        return result
 
     @staticmethod
     def is_test(relative: str) -> bool:
