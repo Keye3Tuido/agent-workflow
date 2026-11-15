@@ -14,3 +14,5 @@ files:
     purpose: "测试权威实体、链接、冲突保护和包规范"
   - name: "test_state_files.py"
     purpose: "测试状态生命周期、会话绑定和并发写入"
+  - name: "test_update_skill.py"
+    purpose: "测试版本比较、更新检测、备份替换、危险路径和版本不一致保护"

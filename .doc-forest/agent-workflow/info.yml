@@ -4,6 +4,8 @@ contents_summary: "工作流入口、YAML 规范、模板和维护脚本"
 files:
   - name: "SKILL.md"
     purpose: "定义 Skill 触发条件和操作流程"
+  - name: "VERSION"
+    purpose: "记录当前发布版本，供 release 更新检查"
 directories:
   - name: "assets"
   - name: "references"

@@ -23,10 +23,6 @@ Windows：
 %USERPROFILE%\.agents\skills\agent-workflow\
 %LOCALAPPDATA%\agent-workflow\<session-id>\requirements.yml
 
-本机示例：
-/Users/user01/.agents/AGENTS.md
-/Users/user01/.agents/skills/agent-workflow/
-/Users/user01/.local/state/agent-workflow/<session-id>/requirements.yml
 ```
 
 | 宿主 | 全局指导入口 | Skill 入口 |
@@ -39,6 +35,16 @@ Windows：
 | OpenCode | `$HOME/.config/opencode/AGENTS.md` | 直接读取共享 Skill |
 
 共享目录是权威源，不代表宿主自动加载。按宿主支持的方式接入，Skill 只留一个实体。路径详情见 `references/paths.md`。
+
+## 会话开始检查更新
+
+宿主加载本规则后、实质工作前，查询 `https://github.com/Keye3Tuido/agent-workflow/releases/latest`：
+
+```bash
+python3 <共享Skill>/scripts/update_skill.py check
+```
+
+`update_available: true` 时才执行 `apply`。更新器校验版本、资产地址和压缩包，保留旧目录备份；完成后重新加载 Skill，不把磁盘更新当作当前会话已经加载。查询失败时使用当前版本并报告，不重复请求。
 
 ## 每轮维护要求
 

@@ -7,6 +7,6 @@ files:
     details: "仅定义摘要方法与粒度"
   - name: "paths.md"
     purpose: "列出共享、宿主和会话路径及链接规则"
-    details: "含本机绝对路径示例"
+    details: "含 macOS／Linux 与 Windows 路径规则"
   - name: "yaml-schemas.md"
     purpose: "规定 YAML 字段、路径语义和状态命令"

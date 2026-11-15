@@ -7,6 +7,16 @@ description: Maintain session requirements, project todos, and .doc-forest summa
 
 常驻 `AGENTS.md` 保存规则；本 Skill 提供操作。脚本检查结构和定位证据，AI 核验语义。不使用 Hook，不区分主、子 Agent 权限。
 
+## 会话开始检查更新
+
+宿主加载规则后、实质工作前运行：
+
+```bash
+python3 <共享Skill>/scripts/update_skill.py check
+```
+
+固定查询 `https://github.com/Keye3Tuido/agent-workflow/releases/latest`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。更新后重新加载 Skill。查询失败时使用当前版本并报告，不重复请求。
+
 ## 恢复状态
 
 1. 实质处理前读取会话目录或 `AGENT_WORKFLOW_SESSION_DIR` 中的 `requirements.yml`，核对 `session.id` 和 `session.project_root`。
@@ -78,7 +88,7 @@ python3 scripts/check_doc_forest.py --root <项目根目录> --path <相对路�
 
 ## 安装
 
-先读 [paths.md](references/paths.md)。权威 Skill 默认位于 `$HOME/.agents/skills/agent-workflow/`；本机为 `/Users/user01/.agents/skills/agent-workflow/`。
+先读 [paths.md](references/paths.md)。权威 Skill 默认位于 `$HOME/.agents/skills/agent-workflow/`，Windows 使用 `%USERPROFILE%\.agents\skills\agent-workflow\`。
 
 ```bash
 python3 scripts/install_links.py --shared-root ~/.agents --host-skill-dir ~/.claude/skills

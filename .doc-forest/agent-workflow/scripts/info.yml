@@ -49,6 +49,10 @@ files:
     depends_on:
       - target: "yaml_common.py"
         reason: "提供严格 YAML、文件锁和原子替换"
+  - name: "update_skill.py"
+    purpose: "查询最新 release，按需下载、校验并备份更新共享 Skill"
+    boundary: "检查不写文件，实际更新保留旧目录备份"
+    entry: "main"
   - name: "yaml_common.py"
     purpose: "提供严格 YAML、文件锁和原子写入"
     boundary: "仅提供基础设施，不决定业务流程"
