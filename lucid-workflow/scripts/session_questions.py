@@ -24,12 +24,41 @@ from yaml_common import (
 
 QUESTION_ID = re.compile(r"^Q-[0-9]{3,}$")
 STATUSES = {"open", "answered", "cancelled"}
+KINDS = {"decision", "context"}
+MAX_CLOSED_QUESTIONS = 20
 REQUIRED = {"id", "question", "reason", "status", "created_at", "updated_at"}
-OPTIONAL = {"context", "requirement_ids", "answer", "answered_at", "cancelled_at"}
+OPTIONAL = {
+    "kind", "context", "requirement_ids", "answer", "answered_at",
+    "applied_at", "cancelled_at",
+}
 
 
 class QuestionError(ValueError):
     pass
+
+
+def question_kind(question: dict[str, Any]) -> str:
+    # Records created before kinds were introduced are retained as context.
+    return question.get("kind", "context")
+
+
+def is_closed(question: dict[str, Any]) -> bool:
+    return question["status"] == "cancelled" or bool(question.get("applied_at"))
+
+
+def prune_closed(data: Any) -> None:
+    closed = [
+        (index, question) for index, question in enumerate(data["questions"])
+        if is_closed(question)
+    ]
+    if len(closed) <= MAX_CLOSED_QUESTIONS:
+        return
+    closed.sort(key=lambda pair: (
+        pair[1].get("applied_at") or pair[1].get("cancelled_at") or "",
+        pair[0],
+    ))
+    removed = {question["id"] for _, question in closed[:-MAX_CLOSED_QUESTIONS]}
+    data["questions"] = [question for question in data["questions"] if question["id"] not in removed]
 
 
 def validate_document(path: Path, data: Any) -> list[str]:
@@ -80,6 +109,9 @@ def validate_document(path: Path, data: Any) -> list[str]:
         status = question.get("status")
         if not isinstance(status, str) or status not in STATUSES:
             errors.append(f"{context_name}.status 无效")
+        kind = question_kind(question)
+        if kind not in KINDS:
+            errors.append(f"{context_name}.kind 无效")
         if "context" in question and not nonempty_string(question["context"]):
             errors.append(f"{context_name}.context 必须是非空字符串")
         requirement_ids = question.get("requirement_ids", [])
@@ -89,7 +121,7 @@ def validate_document(path: Path, data: Any) -> list[str]:
         ):
             errors.append(f"{context_name}.requirement_ids 必须是要求 ID 列表")
         if status == "open":
-            for key in ("answer", "answered_at", "cancelled_at"):
+            for key in ("answer", "answered_at", "applied_at", "cancelled_at"):
                 if key in question:
                     errors.append(f"{context_name} open 应省略 {key}")
         elif status == "answered":
@@ -97,11 +129,15 @@ def validate_document(path: Path, data: Any) -> list[str]:
                 errors.append(f"{context_name} answered 必须有 answer 和 answered_at")
             if "cancelled_at" in question:
                 errors.append(f"{context_name} answered 应省略 cancelled_at")
+            if "applied_at" in question:
+                if kind != "decision" or not is_timestamp(question["applied_at"]):
+                    errors.append(f"{context_name}.applied_at 仅用于 decision 且必须是带时区时间")
         elif status == "cancelled":
             if not is_timestamp(question.get("cancelled_at")):
                 errors.append(f"{context_name} cancelled 必须有 cancelled_at")
-            if "answer" in question or "answered_at" in question:
-                errors.append(f"{context_name} cancelled 应省略 answer 和 answered_at")
+            for key in ("answer", "answered_at", "applied_at"):
+                if key in question:
+                    errors.append(f"{context_name} cancelled 应省略 {key}")
     if len(ids) != len(set(ids)):
         errors.append("questions 含重复 ID")
     if isinstance(next_number, int) and not isinstance(next_number, bool):
@@ -147,6 +183,7 @@ def mutate(arguments: argparse.Namespace, operation: Callable[[Any], Any]) -> An
         data = load_valid(path)
         require_session(data, arguments)
         result = operation(data)
+        prune_closed(data)
         errors = validate_document(path, data)
         if errors:
             raise QuestionError("; ".join(errors))
@@ -192,6 +229,7 @@ def ask(arguments: argparse.Namespace) -> dict[str, Any]:
             "id": question_id,
             "question": arguments.question,
             "reason": arguments.reason,
+            "kind": arguments.kind,
             "status": "open",
             "created_at": now,
             "updated_at": now,
@@ -203,7 +241,7 @@ def ask(arguments: argparse.Namespace) -> dict[str, Any]:
         data["questions"].append(question)
         data["next_question_number"] = number + 1
         data["session"]["updated_at"] = now
-        return {"id": question_id, "status": "open"}
+        return {"id": question_id, "status": "open", "kind": arguments.kind}
 
     return mutate(arguments, operation)
 
@@ -211,8 +249,8 @@ def ask(arguments: argparse.Namespace) -> dict[str, Any]:
 def answer(arguments: argparse.Namespace) -> dict[str, Any]:
     def operation(data: Any) -> Any:
         question = find_question(data, arguments.id)
-        if question["status"] != "open":
-            raise QuestionError("只有 open 问题可以回答")
+        if question["status"] == "cancelled" or question.get("applied_at"):
+            raise QuestionError("已取消或已落实的问题不能修改回答")
         now = utc_now()
         question["status"] = "answered"
         question["answer"] = arguments.answer
@@ -224,12 +262,30 @@ def answer(arguments: argparse.Namespace) -> dict[str, Any]:
     return mutate(arguments, operation)
 
 
+def apply(arguments: argparse.Namespace) -> dict[str, Any]:
+    def operation(data: Any) -> Any:
+        question = find_question(data, arguments.id)
+        if question["status"] != "answered" or question_kind(question) != "decision":
+            raise QuestionError("只有已回答的 decision 问题可以标记落实")
+        if question.get("applied_at"):
+            raise QuestionError("该问题已经落实")
+        now = utc_now()
+        question["applied_at"] = now
+        question["updated_at"] = now
+        data["session"]["updated_at"] = now
+        return {"id": arguments.id, "status": "answered", "applied": True}
+
+    return mutate(arguments, operation)
+
+
 def cancel(arguments: argparse.Namespace) -> dict[str, Any]:
     def operation(data: Any) -> Any:
         question = find_question(data, arguments.id)
-        if question["status"] != "open":
-            raise QuestionError("只有 open 问题可以取消")
+        if question["status"] == "cancelled" or question.get("applied_at"):
+            raise QuestionError("已取消或已落实的问题不能取消")
         now = utc_now()
+        for key in ("answer", "answered_at", "applied_at"):
+            question.pop(key, None)
         question["status"] = "cancelled"
         question["cancelled_at"] = now
         question["updated_at"] = now
@@ -241,10 +297,18 @@ def cancel(arguments: argparse.Namespace) -> dict[str, Any]:
 
 def list_questions(arguments: argparse.Namespace) -> dict[str, Any]:
     data = load_valid(arguments.file)
-    questions = [
-        item for item in data["questions"]
-        if arguments.status is None or item["status"] == arguments.status
-    ]
+    questions = []
+    for item in data["questions"]:
+        if arguments.status is not None and item["status"] != arguments.status:
+            continue
+        if arguments.kind is not None and question_kind(item) != arguments.kind:
+            continue
+        if arguments.active and not (
+            item["status"] == "open"
+            or (item["status"] == "answered" and question_kind(item) == "decision" and not item.get("applied_at"))
+        ):
+            continue
+        questions.append(item)
     return {"count": len(questions), "questions": questions}
 
 
@@ -265,6 +329,7 @@ def build_parser() -> argparse.ArgumentParser:
     session_arguments(ask_parser)
     ask_parser.add_argument("--question", required=True)
     ask_parser.add_argument("--reason", required=True)
+    ask_parser.add_argument("--kind", required=True, choices=sorted(KINDS))
     ask_parser.add_argument("--context")
     ask_parser.add_argument("--requirement-id", action="append")
     ask_parser.set_defaults(handler=ask)
@@ -275,6 +340,11 @@ def build_parser() -> argparse.ArgumentParser:
     answer_parser.add_argument("--answer", required=True)
     answer_parser.set_defaults(handler=answer)
 
+    apply_parser = subcommands.add_parser("apply")
+    session_arguments(apply_parser)
+    apply_parser.add_argument("--id", required=True)
+    apply_parser.set_defaults(handler=apply)
+
     cancel_parser = subcommands.add_parser("cancel")
     session_arguments(cancel_parser)
     cancel_parser.add_argument("--id", required=True)
@@ -283,6 +353,8 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser = subcommands.add_parser("list")
     list_parser.add_argument("--file", required=True, type=Path)
     list_parser.add_argument("--status", choices=sorted(STATUSES))
+    list_parser.add_argument("--kind", choices=sorted(KINDS))
+    list_parser.add_argument("--active", action="store_true")
     list_parser.set_defaults(handler=list_questions)
 
     validate_parser = subcommands.add_parser("validate")

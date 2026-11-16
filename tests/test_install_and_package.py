@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL = ROOT / "agent-workflow"
+SKILL = ROOT / "lucid-workflow"
 SCRIPTS = SKILL / "scripts"
 INSTALLER = SCRIPTS / "install_links.py"
 sys.path.insert(0, str(SCRIPTS))
@@ -23,10 +23,10 @@ class InstallerTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
-        self.source = self.base / "source" / "agent-workflow"
+        self.source = self.base / "source" / "lucid-workflow"
         self.source.mkdir(parents=True)
         (self.source / "SKILL.md").write_text(
-            "---\nname: agent-workflow\ndescription: fixture\n---\n", encoding="utf-8"
+            "---\nname: lucid-workflow\ndescription: fixture\n---\n", encoding="utf-8"
         )
         (self.source / "scripts").mkdir()
         (self.source / "scripts" / "tool.py").write_text("print('ok')\n", encoding="utf-8")
@@ -55,10 +55,10 @@ class InstallerTests(unittest.TestCase):
         hosts = [self.base / "claude" / "skills", self.base / "codex" / "skills"]
         installed = self.run_installer(shared, hosts)
         self.assertEqual(installed.returncode, 0, installed.stderr)
-        target = shared / "skills" / "agent-workflow"
+        target = shared / "skills" / "lucid-workflow"
         self.assertTrue((target / "SKILL.md").is_file())
         for host in hosts:
-            link = host / "agent-workflow"
+            link = host / "lucid-workflow"
             self.assertTrue(link.is_symlink())
             self.assertEqual(link.resolve(), target.resolve())
         repeated = self.run_installer(shared, hosts, use_existing=True)
@@ -69,23 +69,23 @@ class InstallerTests(unittest.TestCase):
 
     def test_existing_shared_or_host_directory_is_not_overwritten(self):
         shared = self.base / "shared"
-        target = shared / "skills" / "agent-workflow"
+        target = shared / "skills" / "lucid-workflow"
         target.mkdir(parents=True)
         (target / "SKILL.md").write_text(
-            "---\nname: agent-workflow\ndescription: existing\n---\n", encoding="utf-8"
+            "---\nname: lucid-workflow\ndescription: existing\n---\n", encoding="utf-8"
         )
         existing = self.run_installer(shared, [])
         self.assertEqual(existing.returncode, 1)
         self.assertIn("description: existing", (target / "SKILL.md").read_text(encoding="utf-8"))
         other_shared = self.base / "other-shared"
         host = self.base / "host"
-        conflict = host / "agent-workflow"
+        conflict = host / "lucid-workflow"
         conflict.mkdir(parents=True)
         (conflict / "keep.txt").write_text("keep\n", encoding="utf-8")
         blocked = self.run_installer(other_shared, [host])
         self.assertEqual(blocked.returncode, 1)
         self.assertTrue((conflict / "keep.txt").is_file())
-        self.assertFalse((other_shared / "skills" / "agent-workflow").exists())
+        self.assertFalse((other_shared / "skills" / "lucid-workflow").exists())
 
 
 class PackageTests(unittest.TestCase):

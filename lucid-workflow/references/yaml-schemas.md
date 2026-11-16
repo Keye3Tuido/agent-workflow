@@ -190,6 +190,7 @@ questions:
   - id: "Q-001"
     question: "需要用户确认的问题"
     reason: "该答案影响目标、权限、安全或结果正确性"
+    kind: "decision"
     status: "open"
     created_at: "2026-11-16T00:00:00Z"
     updated_at: "2026-11-16T00:00:00Z"
@@ -199,15 +200,18 @@ questions:
 ```
 
 - 文件必须位于项目外的当前会话目录。ID 使用 `Q-001` 形式，编号由 `next_question_number` 保存且不复用。
-- `question`、`reason` 和状态时间字段必填；`context`、`requirement_ids` 仅在有助于理解或关联要求时添加。
-- 状态只能 `open → answered` 或 `open → cancelled`。`answered` 必须有 `answer` 和 `answered_at`；`cancelled` 必须有 `cancelled_at`；不属于当前状态的字段省略。
-- 只记录当前决定所需的问题、背景与回答，不保存隐藏思维、凭证或无关聊天。问题文件不单独生成审计日志。
+- 新记录必须写 `kind`：`decision` 表示回答需要落实，`context` 表示回答作为可复用背景。旧记录省略 `kind` 时按 `context` 处理，不参与自动清理。
+- `decision` 的生命周期为 `open → answered → applied`，落实时写 `applied_at`；落实前可以修订回答。`context` 为 `open → answered`，回答可修订、取消或跨任务复用，不需要 `applied_at`。
+- `answered` 必须有 `answer` 和 `answered_at`；`cancelled` 必须有 `cancelled_at`；不属于当前状态的字段省略。
+- open、未落实 decision 和 context 回答不自动删除。已落实 decision 与 cancelled 合计最多保留 20 条，每次写入后清理最旧记录，编号不复用。
+- 恢复时读取 open 和未落实 decision；相关任务按需读取 context 回答。只记录必要内容，不保存隐藏思维、凭证或无关聊天。问题文件不单独生成审计日志。
 
 ```bash
 python3 scripts/session_questions.py init --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录>
-python3 scripts/session_questions.py ask --file <文件> --session-id <ID> --project-root <根目录> --question <问题> --reason <原因> [--context <背景>] [--requirement-id <REQ-ID>]
+python3 scripts/session_questions.py ask --file <文件> --session-id <ID> --project-root <根目录> --kind <decision|context> --question <问题> --reason <原因> [--context <背景>] [--requirement-id <REQ-ID>]
 python3 scripts/session_questions.py answer --file <文件> --session-id <ID> --project-root <根目录> --id <Q-ID> --answer <回答>
+python3 scripts/session_questions.py apply --file <文件> --session-id <ID> --project-root <根目录> --id <Q-ID>
 python3 scripts/session_questions.py cancel --file <文件> --session-id <ID> --project-root <根目录> --id <Q-ID>
-python3 scripts/session_questions.py list --file <文件> [--status open]
+python3 scripts/session_questions.py list --file <文件> [--active] [--status open] [--kind context]
 python3 scripts/session_questions.py validate --file <文件>
 ```

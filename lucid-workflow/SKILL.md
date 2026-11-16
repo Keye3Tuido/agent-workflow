@@ -1,5 +1,5 @@
 ---
-name: agent-workflow
+name: lucid-workflow
 description: Maintain session requirements, user questions, project todos, and .doc-forest summaries; locate task-relevant files and lines. Use for AGENTS.md rules, uncertainty questions, session recovery, project-write checks, context discovery, pre-commit cleanup, and one-command installation.
 ---
 
@@ -33,13 +33,14 @@ python3 <共享Skill>/scripts/update_skill.py check
 
 能通过源码、文档或工具核验的问题先自行核验。只有缺口会影响目标、权限、安全或结果正确性时才询问用户；不要替用户猜测。一次只问一个关键问题，提供建议或明确选项，独立工作可继续进行。
 
-提问前将问题、原因和必要上下文写入会话 `questions.yml`，用户回答后及时记录，取消的问题不再阻塞。恢复会话时先读 open 问题，已回答的问题不重复询问。
+提问时区分 `decision` 与 `context`。决策回答落实到要求、任务或操作后标记 applied；上下文回答作为可复用背景保留，可修订且不需要 applied。恢复时读取 open 和未落实的 decision，相关任务按需读取 context 回答。已落实或取消的记录最多保留 20 条，open、未落实 decision 和 context 回答不自动删除。
 
 ```bash
 python3 scripts/session_questions.py init --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录>
-python3 scripts/session_questions.py ask --file <文件> --session-id <ID> --project-root <根目录> --question <问题> --reason <为什么需要用户决定>
+python3 scripts/session_questions.py ask --file <文件> --session-id <ID> --project-root <根目录> --kind <decision|context> --question <问题> --reason <为什么需要用户决定>
 python3 scripts/session_questions.py answer --file <文件> --session-id <ID> --project-root <根目录> --id <Q-ID> --answer <回答>
-python3 scripts/session_questions.py list --file <文件> --status open
+python3 scripts/session_questions.py apply --file <文件> --session-id <ID> --project-root <根目录> --id <Q-ID>
+python3 scripts/session_questions.py list --file <文件> --active
 ```
 
 ## 初始化
@@ -108,7 +109,7 @@ python3 scripts/check_doc_forest.py --root <项目根目录> --path <相对路�
 
 ## 安装
 
-先读 [paths.md](references/paths.md)。权威 Skill 默认位于 `$HOME/.agents/skills/agent-workflow/`，Windows 使用 `%USERPROFILE%\.agents\skills\agent-workflow\`。
+先读 [paths.md](references/paths.md)。权威 Skill 默认位于 `$HOME/.agents/skills/lucid-workflow/`，Windows 使用 `%USERPROFILE%\.agents\skills\lucid-workflow\`。
 
 解包后运行一次：
 

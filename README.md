@@ -18,7 +18,7 @@ Lucid Workflow 把要求、进度和相关代码的位置整理好。模型不�
 
 这里说的“纯净”，不是把 AI 与外界隔绝，而是减少那些本可以避免的干扰：找不到信息、忘记要求、进度被覆盖、做完又从头再来。
 
-项目名称为 Lucid Workflow；既定 Skill 标识和发布资产仍使用 `agent-workflow`，避免影响已有安装与升级。
+项目名称为 Lucid Workflow，源码目录、Skill 标识和发布资产统一使用 `lucid-workflow`；既定 YML 名称及已有会话、缓存、审计和指导标记路径保持不变。
 
 ## 它怎么帮到你？
 
@@ -46,6 +46,8 @@ Forest 会根据当前任务找出相关模块、源码、测试和具体行号�
 
 每次只问一个关键问题，并给出建议或明确选项。问题、必要上下文和你的回答都会写入会话目录的 `questions.yml`，即使对话截断或换了 Agent，也能找到这个决定。
 
+如果回答只是补充背景，它会作为可复用的上下文保留，之后相关任务还能继续使用；如果回答是在做决定，落实到要求、任务或实际操作后才标记为已落实。开放问题、未落实的决策和上下文回答不会被自动清理，已落实或取消的记录最多保留 20 条。
+
 ### 工作停了，也能接着做
 
 共享 `.todos.yml` 会记录谁在做什么、任务之间的依赖、验证结果和用户是否验收。
@@ -66,17 +68,17 @@ Forest 会根据当前任务找出相关模块、源码、测试和具体行号�
 
 ### 1. 下载并解包
 
-从 [最新 Release](https://github.com/Keye3Tuido/lucid-workflow/releases/latest) 下载 `agent-workflow.skill`，然后运行：
+从 [最新 Release](https://github.com/Keye3Tuido/lucid-workflow/releases/latest) 下载 `lucid-workflow.skill`，然后运行：
 
 ```bash
 mkdir -p ./forest-package
-unzip agent-workflow.skill -d ./forest-package
+unzip lucid-workflow.skill -d ./forest-package
 ```
 
 ### 2. 一条命令完成安装
 
 ```bash
-python3 ./forest-package/agent-workflow/scripts/install.py --host auto
+python3 ./forest-package/lucid-workflow/scripts/install.py --host auto
 ```
 
 这条命令会安装共享 Skill、检测已有宿主、建立链接并合并指导规则，同时保留其他规则。使用 `--host all` 可安装所有支持的宿主；已有共享实体需要复用时添加 `--use-existing`。
@@ -94,7 +96,7 @@ python3 ./forest-package/agent-workflow/scripts/install.py --host auto
 也可以直接运行上下文定位器：
 
 ```bash
-python3 "$HOME/.agents/skills/agent-workflow/scripts/forest_context.py" \
+python3 "$HOME/.agents/skills/lucid-workflow/scripts/forest_context.py" \
   --root /path/to/project \
   --task "修复购买恢复逻辑" \
   --keyword "restore" \
@@ -109,10 +111,10 @@ Lucid Workflow 不能保证模型永远正确，也不能阻止所有网络故�
 
 ## 文档
 
-- [Skill 操作说明](agent-workflow/SKILL.md)
-- [路径与文件生命周期](agent-workflow/references/paths.md)
-- [YAML 规范与命令](agent-workflow/references/yaml-schemas.md)
-- [Forest 内容摘写指南](agent-workflow/references/content-guidance.md)
+- [Skill 操作说明](lucid-workflow/SKILL.md)
+- [路径与文件生命周期](lucid-workflow/references/paths.md)
+- [YAML 规范与命令](lucid-workflow/references/yaml-schemas.md)
+- [Forest 内容摘写指南](lucid-workflow/references/content-guidance.md)
 
 ## 开发验证
 

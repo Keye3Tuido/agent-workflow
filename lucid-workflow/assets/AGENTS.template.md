@@ -8,21 +8,21 @@
 | 位置 | 内容 |
 | --- | --- |
 | Agent 自有全局目录 | 宿主指导入口、Skill 链接和专属配置 |
-| Agent 共享全局目录 | 权威 `AGENTS.md` 和 `skills/agent-workflow/` |
+| Agent 共享全局目录 | 权威 `AGENTS.md` 和 `skills/lucid-workflow/` |
 | 项目根目录 | 项目 `AGENTS.md`、`.doc-forest.yml`、`.doc-forest/`、`.todos.yml`、`.agent-workflow-audit.jsonl` |
 | 会话目录 | 当前会话的 `requirements.yml`、`questions.yml`、对应审计和运行状态 |
 
 ```text
 macOS／Linux：
 $HOME/.agents/AGENTS.md
-$HOME/.agents/skills/agent-workflow/
+$HOME/.agents/skills/lucid-workflow/
 $HOME/.local/state/agent-workflow/<session-id>/requirements.yml
 $HOME/.local/state/agent-workflow/<session-id>/questions.yml
 $HOME/.local/state/agent-workflow/<session-id>/requirements-audit.jsonl
 
 Windows：
 %USERPROFILE%\.agents\AGENTS.md
-%USERPROFILE%\.agents\skills\agent-workflow\
+%USERPROFILE%\.agents\skills\lucid-workflow\
 %LOCALAPPDATA%\agent-workflow\<session-id>\requirements.yml
 %LOCALAPPDATA%\agent-workflow\<session-id>\questions.yml
 %LOCALAPPDATA%\agent-workflow\<session-id>\requirements-audit.jsonl
@@ -32,9 +32,9 @@ Windows：
 | 宿主 | 全局指导入口 | Skill 入口 |
 | --- | --- | --- |
 | Codex | `$HOME/.codex/AGENTS.md` | 直接读取共享 Skill |
-| Claude Code | `$HOME/.claude/CLAUDE.md` | `$HOME/.claude/skills/agent-workflow` → 共享 Skill |
-| Cursor | Settings → Rules → User Rules；项目用 `AGENTS.md` | 共享 Skill 或 `$HOME/.cursor/skills/agent-workflow` 链接 |
-| Gemini CLI | `$HOME/.gemini/GEMINI.md` | 共享 Skill 或 `$HOME/.gemini/skills/agent-workflow` 链接 |
+| Claude Code | `$HOME/.claude/CLAUDE.md` | `$HOME/.claude/skills/lucid-workflow` → 共享 Skill |
+| Cursor | Settings → Rules → User Rules；项目用 `AGENTS.md` | 共享 Skill 或 `$HOME/.cursor/skills/lucid-workflow` 链接 |
+| Gemini CLI | `$HOME/.gemini/GEMINI.md` | 共享 Skill 或 `$HOME/.gemini/skills/lucid-workflow` 链接 |
 | GitHub Copilot | 宿主指导设置；项目用 `AGENTS.md` | 直接读取共享 Skill |
 | OpenCode | `$HOME/.config/opencode/AGENTS.md` | 直接读取共享 Skill |
 
@@ -61,12 +61,13 @@ python3 <共享Skill>/scripts/update_skill.py check
 
 能通过源码、文档或工具核验的问题先自行核验。只有缺口会影响目标、权限、安全或结果正确性时才询问用户，不替用户猜测。一次只问一个关键问题，提供建议或明确选项；不受影响的工作继续执行。
 
-提问前把问题、原因和必要上下文写入会话 `questions.yml`，回答后及时记录，取消的问题不再阻塞。恢复会话时先读 open 问题，已回答的问题不重复询问。只保存当前决定所需内容，不保存隐藏思维。
+提问前把问题、原因和必要上下文写入会话 `questions.yml`，并区分 `decision` 与 `context`。决策回答落实到要求、任务或操作后标记 applied；上下文回答作为可复用背景保留，可修订且不需要 applied。恢复时读取 open 和未落实的 decision，相关任务按需读取 context 回答。已落实或取消的记录最多保留 20 条，open、未落实 decision 和 context 回答不自动删除。
 
 ```bash
-python3 <共享Skill>/scripts/session_questions.py ask --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录> --question <问题> --reason <需要用户决定的原因>
+python3 <共享Skill>/scripts/session_questions.py ask --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录> --kind <decision|context> --question <问题> --reason <需要用户决定的原因>
 python3 <共享Skill>/scripts/session_questions.py answer --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录> --id <Q-ID> --answer <回答>
-python3 <共享Skill>/scripts/session_questions.py list --file <会话目录/questions.yml> --status open
+python3 <共享Skill>/scripts/session_questions.py apply --file <会话目录/questions.yml> --session-id <ID> --project-root <项目根目录> --id <Q-ID>
+python3 <共享Skill>/scripts/session_questions.py list --file <会话目录/questions.yml> --active
 ```
 
 ## 维护任务

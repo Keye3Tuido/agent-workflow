@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "agent-workflow" / "scripts"
+SCRIPTS = ROOT / "lucid-workflow" / "scripts"
 SCRIPT = SCRIPTS / "install.py"
 sys.path.insert(0, str(SCRIPTS))
 
@@ -34,7 +34,7 @@ class OneCommandInstallTests(unittest.TestCase):
         )
 
     def test_merge_guidance_preserves_other_rules_and_replaces_block(self):
-        template = ROOT / "agent-workflow" / "assets" / "AGENTS.template.md"
+        template = ROOT / "lucid-workflow" / "assets" / "AGENTS.template.md"
         target = self.home / "AGENTS.md"
         target.write_text(f"保留前缀\n{START}\n旧规则\n{END}\n保留后缀\n", encoding="utf-8")
         merge_guidance(template, target)
@@ -49,9 +49,9 @@ class OneCommandInstallTests(unittest.TestCase):
     def test_one_command_install_creates_shared_link_and_guidance(self):
         completed = self.run_installer("--host", "claude-code")
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        shared = self.home / ".agents" / "skills" / "agent-workflow"
+        shared = self.home / ".agents" / "skills" / "lucid-workflow"
         self.assertTrue((shared / "SKILL.md").is_file())
-        link = self.home / ".claude" / "skills" / "agent-workflow"
+        link = self.home / ".claude" / "skills" / "lucid-workflow"
         self.assertTrue(link.is_symlink())
         self.assertEqual(link.resolve(), shared.resolve())
         for guidance in (self.home / ".agents" / "AGENTS.md", self.home / ".claude" / "CLAUDE.md"):
@@ -67,7 +67,7 @@ class OneCommandInstallTests(unittest.TestCase):
         completed = self.run_installer()
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(json.loads(completed.stdout)["hosts"], ["codex"])
-        self.assertTrue((self.home / ".codex" / "skills" / "agent-workflow").is_symlink())
+        self.assertTrue((self.home / ".codex" / "skills" / "lucid-workflow").is_symlink())
         self.assertFalse((self.home / ".claude").exists())
 
 

@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "agent-workflow" / "scripts"
+SCRIPTS = ROOT / "lucid-workflow" / "scripts"
 SCRIPT = SCRIPTS / "state_files.py"
 sys.path.insert(0, str(SCRIPTS))
 

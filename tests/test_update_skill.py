@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "agent-workflow" / "scripts"
+SCRIPTS = ROOT / "lucid-workflow" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from update_skill import apply_package, inspect_update, parse_version
@@ -16,13 +16,13 @@ class UpdateTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
-        self.installed = self.base / "skills" / "agent-workflow"
+        self.installed = self.base / "skills" / "lucid-workflow"
         self.installed.mkdir(parents=True)
         (self.installed / "VERSION").write_text("0.9.0\n", encoding="utf-8")
         (self.installed / "SKILL.md").write_text("old\n", encoding="utf-8")
         self.release = {
             "version": "v1.0.0",
-            "asset_url": "https://github.com/Keye3Tuido/lucid-workflow/releases/download/v1.0.0/agent-workflow.skill",
+            "asset_url": "https://github.com/Keye3Tuido/lucid-workflow/releases/download/v1.0.0/lucid-workflow.skill",
             "release_url": "https://github.com/Keye3Tuido/lucid-workflow/releases/tag/v1.0.0",
         }
 
@@ -30,11 +30,11 @@ class UpdateTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def package(self, version="1.0.0", unsafe=False):
-        path = self.base / "agent-workflow.skill"
+        path = self.base / "lucid-workflow.skill"
         with zipfile.ZipFile(path, "w") as archive:
-            archive.writestr("agent-workflow/SKILL.md", "---\nname: agent-workflow\ndescription: test\n---\n")
-            archive.writestr("agent-workflow/VERSION", version + "\n")
-            archive.writestr("agent-workflow/scripts/tool.py", "print('ok')\n")
+            archive.writestr("lucid-workflow/SKILL.md", "---\nname: lucid-workflow\ndescription: test\n---\n")
+            archive.writestr("lucid-workflow/VERSION", version + "\n")
+            archive.writestr("lucid-workflow/scripts/tool.py", "print('ok')\n")
             if unsafe:
                 archive.writestr("../escape.txt", "bad\n")
         return path

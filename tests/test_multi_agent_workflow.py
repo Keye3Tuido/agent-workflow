@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "agent-workflow" / "scripts" / "state_files.py"
+SCRIPT = ROOT / "lucid-workflow" / "scripts" / "state_files.py"
 
 
 class MultiAgentWorkflowTests(unittest.TestCase):

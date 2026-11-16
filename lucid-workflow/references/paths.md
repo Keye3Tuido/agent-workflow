@@ -11,7 +11,7 @@
 | 内容 | macOS／Linux | Windows |
 | --- | --- | --- |
 | 指导源 | `$HOME/.agents/AGENTS.md` | `%USERPROFILE%\.agents\AGENTS.md` |
-| Skill | `$HOME/.agents/skills/agent-workflow/` | `%USERPROFILE%\.agents\skills\agent-workflow\` |
+| Skill | `$HOME/.agents/skills/lucid-workflow/` | `%USERPROFILE%\.agents\skills\lucid-workflow\` |
 | 会话根目录 | `$HOME/.local/state/agent-workflow/` | `%LOCALAPPDATA%\agent-workflow\` |
 
 共享路径是权威源，不代表宿主自动读取其中的 `AGENTS.md`。
@@ -22,12 +22,12 @@
 
 | 宿主 | 全局指导入口 | Skill 发现或链接位置 |
 | --- | --- | --- |
-| Codex | `~/.codex/AGENTS.md` | `~/.agents/skills/agent-workflow/` |
-| Claude Code | `~/.claude/CLAUDE.md` | `~/.claude/skills/agent-workflow` → 共享 Skill |
-| Cursor | Settings → Rules → User Rules；项目用 `AGENTS.md` | 共享 Skill，或 `~/.cursor/skills/agent-workflow` 链接 |
-| Gemini CLI | `~/.gemini/GEMINI.md` | 共享 Skill，或 `~/.gemini/skills/agent-workflow` 链接 |
-| GitHub Copilot | 宿主指导设置；项目用 `AGENTS.md` | `~/.agents/skills/agent-workflow/` |
-| OpenCode | `~/.config/opencode/AGENTS.md` | `~/.agents/skills/agent-workflow/` |
+| Codex | `~/.codex/AGENTS.md` | `~/.agents/skills/lucid-workflow/` |
+| Claude Code | `~/.claude/CLAUDE.md` | `~/.claude/skills/lucid-workflow` → 共享 Skill |
+| Cursor | Settings → Rules → User Rules；项目用 `AGENTS.md` | 共享 Skill，或 `~/.cursor/skills/lucid-workflow` 链接 |
+| Gemini CLI | `~/.gemini/GEMINI.md` | 共享 Skill，或 `~/.gemini/skills/lucid-workflow` 链接 |
+| GitHub Copilot | 宿主指导设置；项目用 `AGENTS.md` | `~/.agents/skills/lucid-workflow/` |
+| OpenCode | `~/.config/opencode/AGENTS.md` | `~/.agents/skills/lucid-workflow/` |
 
 路径存在不代表已经加载；以宿主实际支持的方式为准。
 
@@ -47,8 +47,8 @@ Windows：%LOCALAPPDATA%\agent-workflow\<session-id>\
 权威 Skill 只保留一个实体。宿主位置使用目录链接，不使用 `.lnk`、路径文本或副本。
 
 ```bash
-python3 /absolute/unpacked/agent-workflow/scripts/install_links.py \
-  --source /absolute/unpacked/agent-workflow \
+python3 /absolute/unpacked/lucid-workflow/scripts/install_links.py \
+  --source /absolute/unpacked/lucid-workflow \
   --shared-root "$HOME/.agents" \
   --host-skill-dir "$HOME/.claude/skills"
 ```
@@ -56,8 +56,8 @@ python3 /absolute/unpacked/agent-workflow/scripts/install_links.py \
 结果：
 
 ```text
-实体：$HOME/.agents/skills/agent-workflow/
-链接：$HOME/.claude/skills/agent-workflow -> $HOME/.agents/skills/agent-workflow/
+实体：$HOME/.agents/skills/lucid-workflow/
+链接：$HOME/.claude/skills/lucid-workflow -> $HOME/.agents/skills/lucid-workflow/
 ```
 
 已有实体默认不覆盖，确认复用时加 `--use-existing`。链接安装不等于指导文件已加载，`AGENTS.md` 仍须接入宿主指导入口。
@@ -69,9 +69,9 @@ python3 /absolute/unpacked/agent-workflow/scripts/install_links.py \
 
 | 文件或目录 | 持久化与维护 | 清理与更新规则 |
 | --- | --- | --- |
-| `agent-workflow/assets/AGENTS.template.md` | 随 Skill 包保存的权威指导模板，不参与源仓库自动加载 | 安装时按宿主规则接入为 `AGENTS.md`；源仓库内不得改成自动加载文件名 |
+| `lucid-workflow/assets/AGENTS.template.md` | 随 Skill 包保存的权威指导模板，不参与源仓库自动加载 | 安装时按宿主规则接入为 `AGENTS.md`；源仓库内不得改成自动加载文件名 |
 | 共享目录的 `AGENTS.md` | 持久化共享指导源，按宿主方式接入 | Skill 更新不自动覆盖；模板变化时复核并明确更新，保留已有其他规则 |
-| `skills/agent-workflow/` | 持久化共享 Skill 实体，版本更新前检查并备份旧目录 | 更新后保留备份；确认新版本可用后由用户清理旧备份 |
+| `skills/lucid-workflow/` | 持久化共享 Skill 实体，版本更新前检查并备份旧目录 | 更新后保留备份；确认新版本可用后由用户清理旧备份 |
 
 ### 目标项目
 
@@ -80,7 +80,7 @@ python3 /absolute/unpacked/agent-workflow/scripts/install_links.py \
 | `.todos.yml` | 使用共享任务时保留，保存任务状态和下一编号；所有写入经状态脚本加锁、校验和原子替换 | `clean-accepted` 只删除已验收条目及其已满足依赖，不删除文件或编号；取消的任务按命令删除 |
 | `.agent-workflow-audit.jsonl` | 位于项目根目录的项目协调审计；超过 100 个完整操作时清理到最近 50 个 | 每次成功或失败后检查水位并自动淘汰旧操作；`git commit` 和 `clean-accepted` 不额外清空。不再需要时由用户明确删除；后续状态写入会重新生成 |
 | 会话目录的 `requirements.yml` | 位于项目外，保存当前会话有效要求；每轮核对并删除取消或到期条目 | 会话结束且不再需要恢复时删除，不进入项目或提交 |
-| 会话目录的 `questions.yml` | 位于项目外，保存需要用户决定的问题、必要上下文、回答和状态 | 问题取消或回答后保留近期决定；会话结束且不再需要恢复时删除，不进入项目或提交 |
+| 会话目录的 `questions.yml` | 位于项目外，保存问题、必要上下文、回答、类型和落实状态 | open、未落实 decision 和 context 回答不自动删除；已落实 decision 与 cancelled 合计最多保留 20 条。会话结束且不再需要恢复时删除 |
 | 会话目录的 `requirements-audit.jsonl` | 位于项目外；超过 100 个要求操作时清理到最近 50 个 | 每次成功或失败后检查水位并自动淘汰旧操作；会话结束且不再需要追溯时与要求文件一并删除 |
 | `.doc-forest.yml`、`.doc-forest/` | 启用森林的目标项目保留，保存导航配置和人工维护的摘要；项目写入前后检查并更新 | 它们不是缓存。停用森林时明确删除；只清理缓存不会清理森林 |
 | `.cache/agent-workflow/` | 派生 SQLite 缓存，可按需重建，不作为事实来源 | 可随时删除，不纳入提交；再次检索时自动重建 |
@@ -90,6 +90,6 @@ python3 /absolute/unpacked/agent-workflow/scripts/install_links.py \
 
 ### Lucid Workflow 源仓库自身
 
-源仓库只保存产品、测试、项目说明和发布资产：`agent-workflow/`、`tests/`、`README.md`、`LICENSE` 和 `dist/`。权威指导模板是 `agent-workflow/assets/AGENTS.template.md`，仓库内任何位置都不得保留会自动加载的 `AGENTS.md`。
+源仓库只保存产品、测试、项目说明和发布资产：`lucid-workflow/`、`tests/`、`README.md`、`LICENSE` 和 `dist/`。权威指导模板是 `lucid-workflow/assets/AGENTS.template.md`，仓库内任何位置都不得保留会自动加载的 `AGENTS.md`。
 
 源仓库自身不创建或提交 `.todos.yml`、`.agent-workflow-audit.jsonl`、`.doc-forest.yml`、`.doc-forest/` 或任何目录的 `AGENTS.md`，不得对本仓库运行工作流初始化或状态写入。检查和协同测试使用临时项目夹具，不对源仓库生成这些文件。

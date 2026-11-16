@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install one shared agent-workflow Skill and host-native directory links."""
+"""Install one shared lucid-workflow Skill and host-native directory links."""
 
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ def validate_skill(path: Path) -> None:
     if not path.is_dir() or not skill_file.is_file():
         raise InstallError(f"不是有效 Skill 目录: {path}")
     text = skill_file.read_text(encoding="utf-8")
-    if not re.search(r"^name:\s*agent-workflow\s*$", text, re.MULTILINE):
-        raise InstallError("SKILL.md 的 name 必须是 agent-workflow")
+    if not re.search(r"^name:\s*lucid-workflow\s*$", text, re.MULTILINE):
+        raise InstallError("SKILL.md 的 name 必须是 lucid-workflow")
 
 
 def install_shared(source: Path, target: Path, use_existing: bool) -> str:
@@ -41,7 +41,7 @@ def install_shared(source: Path, target: Path, use_existing: bool) -> str:
     if source == target or target in source.parents:
         raise InstallError("共享目标不能包含当前 Skill 源目录")
     target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix=".agent-workflow.", dir=target.parent))
+    temporary = Path(tempfile.mkdtemp(prefix=".lucid-workflow.", dir=target.parent))
     try:
         shutil.copytree(
             source,
@@ -60,7 +60,7 @@ def install_shared(source: Path, target: Path, use_existing: bool) -> str:
 
 def create_link(host_skill_dir: Path, target: Path) -> str:
     host_skill_dir.mkdir(parents=True, exist_ok=True)
-    link = host_skill_dir / "agent-workflow"
+    link = host_skill_dir / "lucid-workflow"
     if link.is_symlink():
         if link.resolve() == target.resolve():
             return "already-linked"
@@ -74,7 +74,7 @@ def create_link(host_skill_dir: Path, target: Path) -> str:
 def preflight_hosts(hosts: list[Path], target: Path) -> None:
     seen = set()
     for host in hosts:
-        link = host / "agent-workflow"
+        link = host / "lucid-workflow"
         key = str(link.absolute())
         if key in seen:
             raise InstallError(f"重复宿主链接: {link}")
@@ -98,7 +98,7 @@ def main() -> int:
     try:
         source = arguments.source.expanduser().resolve()
         shared_root = arguments.shared_root.expanduser().resolve()
-        target = shared_root / "skills" / "agent-workflow"
+        target = shared_root / "skills" / "lucid-workflow"
         hosts = [path.expanduser().resolve() for path in arguments.host_skill_dir]
         validate_skill(source)
         preflight_hosts(hosts, target)
@@ -106,7 +106,7 @@ def main() -> int:
         actions.append({"action": shared_action, "path": str(target)})
         for host in hosts:
             action = create_link(host, target)
-            actions.append({"action": action, "path": str(host / "agent-workflow")})
+            actions.append({"action": action, "path": str(host / "lucid-workflow")})
     except (InstallError, OSError) as exc:
         print(
             json.dumps({"ok": False, "actions": actions, "error": str(exc)}, ensure_ascii=False),

@@ -79,7 +79,7 @@ def main() -> int:
     try:
         source = arguments.source.expanduser().resolve()
         shared_root = arguments.shared_root.expanduser().resolve()
-        target = shared_root / "skills" / "agent-workflow"
+        target = shared_root / "skills" / "lucid-workflow"
         hosts = selected_hosts(arguments.host or ["auto"])
         host_dirs = [Path.home() / HOSTS[name][0] for name in hosts]
         validate_skill(source)
@@ -88,7 +88,7 @@ def main() -> int:
         template = source / "assets" / "AGENTS.template.md"
         for name in hosts:
             skills_dir, guidance = HOSTS[name]
-            actions.append({"action": create_link(Path.home() / skills_dir, target), "path": str(Path.home() / skills_dir / "agent-workflow")})
+            actions.append({"action": create_link(Path.home() / skills_dir, target), "path": str(Path.home() / skills_dir / "lucid-workflow")})
             actions.append({"action": merge_guidance(template, Path.home() / guidance), "path": str(Path.home() / guidance)})
         actions.append({"action": merge_guidance(template, shared_root / "AGENTS.md"), "path": str(shared_root / "AGENTS.md")})
     except (ValueError, OSError) as exc:

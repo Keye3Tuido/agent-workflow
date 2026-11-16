@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "agent-workflow" / "scripts"
+SCRIPTS = ROOT / "lucid-workflow" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from check_doc_forest import ConfigError, check_forest

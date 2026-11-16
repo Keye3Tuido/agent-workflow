@@ -20,7 +20,7 @@ from typing import Any
 
 REPOSITORY = "Keye3Tuido/lucid-workflow"
 RELEASE_API = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
-ASSET_NAME = "agent-workflow.skill"
+ASSET_NAME = "lucid-workflow.skill"
 MAX_PACKAGE_BYTES = 20 * 1024 * 1024
 
 
@@ -53,7 +53,7 @@ def fetch_latest_release(api_url: str = RELEASE_API) -> dict[str, Any]:
         except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
             release = None
     if release is None:
-        request = urllib.request.Request(api_url, headers={"User-Agent": "agent-workflow-update"})
+        request = urllib.request.Request(api_url, headers={"User-Agent": "lucid-workflow-update"})
         with urllib.request.urlopen(request, timeout=30) as response:
             release = json.load(response)
     if not isinstance(release, dict) or not release.get("tag_name"):
@@ -90,7 +90,7 @@ def inspect_update(installed_root: Path, release: dict[str, Any]) -> dict[str, A
 def download_package(url: str, directory: Path) -> Path:
     if not url.startswith(f"https://github.com/{REPOSITORY}/releases/download/"):
         raise ValueError("拒绝非预期仓库的下载地址")
-    request = urllib.request.Request(url, headers={"User-Agent": "agent-workflow-update"})
+    request = urllib.request.Request(url, headers={"User-Agent": "lucid-workflow-update"})
     package = directory / ASSET_NAME
     with urllib.request.urlopen(request, timeout=30) as response:
         content = response.read(MAX_PACKAGE_BYTES + 1)
@@ -107,14 +107,14 @@ def validate_package(package: Path, expected_version: str) -> None:
         names = archive.namelist()
         for info in archive.infolist():
             path = PurePosixPath(info.filename)
-            if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] != "agent-workflow":
+            if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] != "lucid-workflow":
                 raise ValueError(f"压缩包包含不安全路径: {info.filename}")
             if stat.S_ISLNK(info.external_attr >> 16):
                 raise ValueError("压缩包不得包含符号链接")
-        for required in ("agent-workflow/SKILL.md", "agent-workflow/VERSION"):
+        for required in ("lucid-workflow/SKILL.md", "lucid-workflow/VERSION"):
             if required not in names:
                 raise ValueError(f"压缩包缺少 {required}")
-        version = archive.read("agent-workflow/VERSION").decode("utf-8").strip()
+        version = archive.read("lucid-workflow/VERSION").decode("utf-8").strip()
         if parse_version(version) != parse_version(expected_version):
             raise ValueError(f"包版本 {version} 与 release {expected_version} 不一致")
 
@@ -124,14 +124,14 @@ def apply_package(package: Path, installed_root: Path, expected_version: str) ->
     installed_root.parent.mkdir(parents=True, exist_ok=True)
     if installed_root.is_symlink():
         raise ValueError("共享 Skill 根目录不得是符号链接")
-    temporary = Path(tempfile.mkdtemp(prefix=".agent-workflow-update-", dir=installed_root.parent))
+    temporary = Path(tempfile.mkdtemp(prefix=".lucid-workflow-update-", dir=installed_root.parent))
     backup = None
     try:
         with zipfile.ZipFile(package) as archive:
             archive.extractall(temporary)
-        source = temporary / "agent-workflow"
+        source = temporary / "lucid-workflow"
         if installed_root.exists():
-            backup = installed_root.parent / f".agent-workflow.backup-{uuid.uuid4().hex}"
+            backup = installed_root.parent / f".lucid-workflow.backup-{uuid.uuid4().hex}"
             os.replace(installed_root, backup)
         try:
             os.replace(source, installed_root)
@@ -154,7 +154,7 @@ def main() -> int:
     parser.add_argument(
         "--installed-root",
         type=Path,
-        default=Path("~/.agents/skills/agent-workflow"),
+        default=Path("~/.agents/skills/lucid-workflow"),
     )
     arguments = parser.parse_args()
     try:
@@ -164,7 +164,7 @@ def main() -> int:
         if arguments.action == "check" or not status["update_available"]:
             print(json.dumps(status, ensure_ascii=False))
             return 0
-        with tempfile.TemporaryDirectory(prefix="agent-workflow-download-") as directory:
+        with tempfile.TemporaryDirectory(prefix="lucid-workflow-download-") as directory:
             package = download_package(release["asset_url"], Path(directory))
             result = apply_package(package, root, release["version"])
         print(json.dumps({**status, **result}, ensure_ascii=False))
