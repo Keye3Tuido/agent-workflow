@@ -42,6 +42,8 @@ def merge_guidance(template: Path, target: Path) -> str:
             result = current[:start] + incoming + current[end:]
         else:
             result = current.rstrip() + "\n\n" + incoming + "\n"
+    if existed and current == result:
+        return "guidance-unchanged"
     if target.exists():
         backup = target.with_name(f"{target.name}.backup-lucid-{uuid.uuid4().hex}")
         backup.write_bytes(target.read_bytes())
@@ -80,11 +82,15 @@ def main() -> int:
         source = arguments.source.expanduser().resolve()
         shared_root = arguments.shared_root.expanduser().resolve()
         target = shared_root / "skills" / "lucid-workflow"
-        hosts = selected_hosts(arguments.host or ["auto"])
+        requested = arguments.host or ["auto"]
+        hosts = selected_hosts(requested)
+        shared_only = [name for name in ("kimi", "kimi-code") if "all" in requested or name in requested]
         host_dirs = [Path.home() / HOSTS[name][0] for name in hosts]
         validate_skill(source)
         preflight_hosts(host_dirs, target)
         actions.append({"action": install_shared(source, target, arguments.use_existing), "path": str(target)})
+        for name in shared_only:
+            actions.append({"action": "shared-only", "host": name, "path": str(target)})
         template = source / "assets" / "AGENTS.template.md"
         for name in hosts:
             skills_dir, guidance = HOSTS[name]
@@ -94,7 +100,7 @@ def main() -> int:
     except (ValueError, OSError) as exc:
         print(json.dumps({"ok": False, "actions": actions, "error": str(exc)}, ensure_ascii=False), file=sys.stderr)
         return 1
-    print(json.dumps({"ok": True, "actions": actions, "hosts": hosts}, ensure_ascii=False))
+    print(json.dumps({"ok": True, "actions": actions, "hosts": hosts, "shared_only_hosts": shared_only}, ensure_ascii=False))
     return 0
 
 

@@ -33,6 +33,8 @@ python3 <共享Skill>/scripts/update_skill.py check
 
 能通过源码、文档或工具核验的问题先自行核验。只有缺口会影响目标、权限、安全或结果正确性时才询问用户；不要替用户猜测。一次只问一个关键问题，提供建议或明确选项，独立工作可继续进行。
 
+以最少打扰为原则：已明确的授权、验收和范围不重复确认，不要求二次确认。同一指令同时表达成果肯定和提交等操作授权且范围清楚时，可作为对应依据一次执行，不拆成多轮，但不得从成果肯定推断额外授权。常规提交已有原始授权时零次额外确认，否则最多一次；相关决策能合并时不拆问，已有 open 问题不重复提出。后台检查与维护成功不额外打扰，任务结果和异常仍清楚说明。
+
 提问时区分 `decision` 与 `context`。决策回答落实到要求、任务或操作后标记 applied；上下文回答作为可复用背景保留，可修订且不需要 applied。恢复时读取 open 和未落实的 decision，相关任务按需读取 context 回答。已落实或取消的记录最多保留 20 条，open、未落实 decision 和 context 回答不自动删除。
 
 ```bash
@@ -119,4 +121,4 @@ python3 scripts/check_doc_forest.py --root <项目根目录> --path <相对路�
 python3 scripts/install.py --host auto
 ```
 
-安装器会安装共享 Skill、检测并链接宿主、合并 `assets/AGENTS.template.md` 的指导区块，保留已有其他规则。使用 `--host all` 安装全部支持的宿主；已有共享实体需要复用时添加 `--use-existing`。不支持目录链接时明确报告，不复制第二份。安装后重启或开启新会话，并核验宿主实际加载。`install_links.py` 仅用于需要分开管理链接的低层操作。
+安装器会安装共享 Skill、检测并链接宿主、合并 `assets/AGENTS.template.md` 的指导区块，保留已有其他规则。使用 `--host all` 安装全部支持的宿主；已有共享实体需要复用时添加 `--use-existing`。Kimi／Kimi Code 使用共享实体，显式选择时报告 `shared-only`，不创建宿主链接或副本。指导内容不变时返回 `guidance-unchanged`，不改写文件或生成备份。不支持目录链接时明确报告，不复制第二份。安装后重启或开启新会话，并核验宿主实际加载。`install_links.py` 仅用于需要分开管理链接的低层操作。

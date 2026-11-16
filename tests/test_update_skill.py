@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -10,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "lucid-workflow" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-from update_skill import RELEASE_API, apply_package, fetch_latest_release, inspect_update, parse_version
+from update_skill import RELEASE_API, apply_package, fetch_latest_release, inspect_update, main, parse_version
 
 
 class UpdateTests(unittest.TestCase):
@@ -75,6 +76,25 @@ class UpdateTests(unittest.TestCase):
         backup = Path(result["backup"])
         self.assertEqual((backup / "VERSION").read_text(encoding="utf-8").strip(), "0.9.0")
         self.assertTrue((backup / "SKILL.md").is_file())
+
+    @unittest.skipIf(os.name == "nt", "POSIX symlink fixture")
+    def test_cli_rejects_symlinked_installed_root(self):
+        alias = self.base / "skills" / "alias"
+        alias.symlink_to(self.installed, target_is_directory=True)
+        package = self.package()
+        with (
+            mock.patch("sys.argv", ["update_skill.py", "apply", "--installed-root", str(alias)]),
+            mock.patch("update_skill.fetch_latest_release", return_value=self.release),
+            mock.patch("update_skill.download_package", return_value=package),
+            mock.patch("builtins.print") as printed,
+        ):
+            result = main()
+        self.assertEqual(result, 2)
+        self.assertTrue(alias.is_symlink())
+        self.assertEqual((self.installed / "VERSION").read_text(encoding="utf-8").strip(), "0.9.0")
+        payload = json.loads(printed.call_args.args[0])
+        self.assertFalse(payload["ok"])
+        self.assertIn("不得是符号链接", payload["error"])
 
     def test_unsafe_package_does_not_replace_installation(self):
         before = (self.installed / "VERSION").read_bytes()

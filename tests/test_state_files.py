@@ -72,6 +72,19 @@ class StateTests(unittest.TestCase):
         self.assertNotIn("*.jsonl", first.decode().splitlines())
         self.assertNotIn(".todos.yml", first.decode().splitlines())
 
+    @unittest.skipIf(os.name == "nt", "POSIX symlink fixture")
+    def test_todos_gitignore_symlink_target_is_updated(self):
+        shared = self.base / "shared-gitignore"
+        shared.write_text(".venv/\n", encoding="utf-8")
+        ignore = self.project / ".gitignore"
+        ignore.symlink_to(shared)
+        self.init_todos()
+        self.assertTrue(ignore.is_symlink())
+        self.assertEqual(
+            shared.read_text(encoding="utf-8"),
+            ".venv/\n.agent-workflow-audit.jsonl\n..todos.yml.lock\n",
+        )
+
     def test_done_waits_for_user_affirmation_or_commit_permission(self):
         self.init_todos()
         added = self.run_state(

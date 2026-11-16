@@ -339,6 +339,8 @@ def load_valid(path: Path, kind: str) -> Any:
 
 def ensure_todos_gitignore(path: Path) -> None:
     ignore_path = path.parent / ".gitignore"
+    if ignore_path.is_symlink():
+        ignore_path = ignore_path.resolve()
     try:
         current = ignore_path.read_text(encoding="utf-8") if ignore_path.is_file() else ""
     except UnicodeDecodeError as exc:

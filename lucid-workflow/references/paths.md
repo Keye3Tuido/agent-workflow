@@ -70,7 +70,7 @@ python3 /absolute/unpacked/lucid-workflow/scripts/install_links.py \
 | 文件或目录 | 持久化与维护 | 清理与更新规则 |
 | --- | --- | --- |
 | `lucid-workflow/assets/AGENTS.template.md` | 随 Skill 包保存的权威指导模板，不参与源仓库自动加载 | 安装时按宿主规则接入为 `AGENTS.md`；源仓库内不得改成自动加载文件名 |
-| 共享目录的 `AGENTS.md` | 持久化共享指导源，按宿主方式接入 | Skill 更新不自动覆盖；模板变化时复核并明确更新，保留已有其他规则 |
+| 共享目录的 `AGENTS.md` | 持久化共享指导源，按宿主方式接入 | Skill 更新不自动覆盖；模板变化时复核并明确更新，保留已有其他规则；内容不变时不改写或备份，真实变化产生的备份由用户确认后清理 |
 | `skills/lucid-workflow/` | 持久化共享 Skill 实体，版本更新前检查并备份旧目录 | 更新后保留备份；确认新版本可用后由用户清理旧备份 |
 
 ### 目标项目

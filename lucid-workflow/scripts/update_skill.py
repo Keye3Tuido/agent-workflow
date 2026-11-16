@@ -143,7 +143,7 @@ def main() -> int:
     )
     arguments = parser.parse_args()
     try:
-        root = arguments.installed_root.expanduser().resolve()
+        root = Path(os.path.abspath(arguments.installed_root.expanduser()))
         release = fetch_latest_release()
         status = inspect_update(root, release)
         if arguments.action == "check" or not status["update_available"]:

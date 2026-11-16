@@ -61,6 +61,21 @@ class OneCommandInstallTests(unittest.TestCase):
         repeated = self.run_installer("--host", "claude-code", "--use-existing")
         self.assertEqual(repeated.returncode, 0, repeated.stderr)
         self.assertEqual((self.home / ".claude" / "CLAUDE.md").read_text(encoding="utf-8").count(START), 1)
+        actions = [item["action"] for item in json.loads(repeated.stdout)["actions"]]
+        self.assertEqual(actions.count("guidance-unchanged"), 2)
+        self.assertFalse(list(self.home.rglob("*.backup-lucid-*")))
+
+    def test_kimi_hosts_explicitly_use_shared_installation(self):
+        completed = self.run_installer("--host", "kimi", "--host", "kimi-code")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["hosts"], [])
+        self.assertEqual(result["shared_only_hosts"], ["kimi", "kimi-code"])
+        shared_actions = [item for item in result["actions"] if item["action"] == "shared-only"]
+        self.assertEqual([item["host"] for item in shared_actions], ["kimi", "kimi-code"])
+        self.assertTrue((self.home / ".agents" / "skills" / "lucid-workflow" / "SKILL.md").is_file())
+        self.assertFalse((self.home / ".kimi").exists())
+        self.assertFalse((self.home / ".kimi-code").exists())
 
     def test_auto_only_uses_existing_host_directories(self):
         (self.home / ".codex").mkdir()
