@@ -14,6 +14,7 @@ from typing import Any, Callable
 from state_audit import perform
 from yaml_common import (
     YamlError,
+    atomic_write_text,
     atomic_write_yaml,
     is_timestamp,
     load_yaml,
@@ -336,9 +337,27 @@ def load_valid(path: Path, kind: str) -> Any:
     return data
 
 
+def ensure_todos_gitignore(path: Path) -> None:
+    ignore_path = path.parent / ".gitignore"
+    try:
+        current = ignore_path.read_text(encoding="utf-8") if ignore_path.is_file() else ""
+    except UnicodeDecodeError as exc:
+        raise StateError(".gitignore 必须使用 UTF-8") from exc
+    entries = (".agent-workflow-audit.jsonl", f".{path.name}.lock")
+    existing = set(current.splitlines())
+    missing = [entry for entry in entries if entry not in existing]
+    if not missing:
+        return
+    separator = "\n" if current and not current.endswith("\n") else ""
+    addition = "\n".join(missing) + "\n"
+    atomic_write_text(ignore_path, current + separator + addition)
+
+
 def mutate(path: Path, kind: str, operation: Callable[[Any], Any], arguments: Any) -> Any:
     def write() -> Any:
         data = load_valid(path, kind)
+        if kind == "todos":
+            ensure_todos_gitignore(path)
         result = operation(data)
         errors = validate_document(path, data, kind)
         if errors:
@@ -407,6 +426,7 @@ def initialize_todos(arguments: argparse.Namespace) -> dict[str, Any]:
             "next_task_number": 1,
             "tasks": [],
         }
+        ensure_todos_gitignore(path)
         atomic_write_yaml(path, data)
         return {"file": str(path.resolve())}
 

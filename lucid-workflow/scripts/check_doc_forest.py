@@ -18,6 +18,15 @@ class ConfigError(ValueError):
     pass
 
 
+GENERATED_STATE_FILES = {
+    ".agent-workflow-audit.jsonl",
+    "requirements-audit.jsonl",
+    ".questions.yml.lock",
+    ".requirements.yml.lock",
+    "..todos.yml.lock",
+}
+
+
 def posix_relative(path: Path, root: Path) -> str:
     relative = path.relative_to(root).as_posix()
     return "." if relative == "." else relative
@@ -97,6 +106,8 @@ class ForestChecker:
         return self.forest_root if relative == "." else self.forest_root / relative
 
     def is_excluded(self, relative: str) -> bool:
+        if PurePosixPath(relative).name in GENERATED_STATE_FILES:
+            return True
         if relative == ".doc-forest" or relative.startswith(".doc-forest/"):
             return True
         if relative == ".cache" or relative.startswith(".cache/"):

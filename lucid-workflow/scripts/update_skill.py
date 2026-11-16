@@ -9,7 +9,6 @@ import os
 import re
 import shutil
 import stat
-import subprocess
 import tempfile
 import urllib.request
 import uuid
@@ -39,23 +38,9 @@ def installed_version(installed_root: Path) -> str:
 
 
 def fetch_latest_release(api_url: str = RELEASE_API) -> dict[str, Any]:
-    release = None
-    if shutil.which("gh"):
-        try:
-            completed = subprocess.run(
-                ["gh", "api", f"repos/{REPOSITORY}/releases/latest"],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-            if completed.returncode == 0:
-                release = json.loads(completed.stdout)
-        except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
-            release = None
-    if release is None:
-        request = urllib.request.Request(api_url, headers={"User-Agent": "lucid-workflow-update"})
-        with urllib.request.urlopen(request, timeout=30) as response:
-            release = json.load(response)
+    request = urllib.request.Request(api_url, headers={"User-Agent": "lucid-workflow-update"})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        release = json.load(response)
     if not isinstance(release, dict) or not release.get("tag_name"):
         raise ValueError("最新 release 缺少 tag_name")
     assets = release.get("assets", [])

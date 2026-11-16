@@ -81,6 +81,17 @@ class ContextTests(unittest.TestCase):
             files=[{"name": "test_checker.py", "purpose": "检查器回归测试"}],
         )
 
+    def test_generated_audit_and_lock_files_are_not_scanned(self):
+        self.build_project()
+        for name in (".agent-workflow-audit.jsonl", "..todos.yml.lock", "notes.jsonl", "uv.lock"):
+            (self.root / name).write_text("森林检查\n", encoding="utf-8")
+        report = find_context(self.root, "森林检查", keywords=["森林检查"], max_results=20)
+        paths = [item["path"] for item in report["locations"]]
+        self.assertNotIn(".agent-workflow-audit.jsonl", paths)
+        self.assertNotIn("..todos.yml.lock", paths)
+        self.assertIn("notes.jsonl", paths)
+        self.assertIn("uv.lock", paths)
+
     def test_summary_path_and_content_produce_ranked_locations_and_lines(self):
         self.build_project()
         report = find_context(self.root, "森林检查", keywords=["森林检查"], max_results=2)

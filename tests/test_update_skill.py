@@ -4,12 +4,13 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "lucid-workflow" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-from update_skill import apply_package, inspect_update, parse_version
+from update_skill import RELEASE_API, apply_package, fetch_latest_release, inspect_update, parse_version
 
 
 class UpdateTests(unittest.TestCase):
@@ -45,6 +46,27 @@ class UpdateTests(unittest.TestCase):
         self.assertTrue(status["update_available"])
         (self.installed / "VERSION").write_text("1.0.0\n", encoding="utf-8")
         self.assertFalse(inspect_update(self.installed, self.release)["update_available"])
+
+    def test_fetch_latest_release_uses_public_api(self):
+        payload = {
+            "tag_name": "v1.0.0",
+            "html_url": self.release["release_url"],
+            "assets": [
+                {
+                    "name": "lucid-workflow.skill",
+                    "browser_download_url": self.release["asset_url"],
+                }
+            ],
+        }
+        response = mock.MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps(payload)
+        with mock.patch("urllib.request.urlopen", return_value=response) as urlopen:
+            release = fetch_latest_release()
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, RELEASE_API)
+        self.assertEqual(urlopen.call_args.kwargs["timeout"], 30)
+        urlopen.assert_called_once()
+        self.assertEqual(release, self.release)
 
     def test_apply_preserves_backup_and_replaces_version(self):
         result = apply_package(self.package(), self.installed, "v1.0.0")

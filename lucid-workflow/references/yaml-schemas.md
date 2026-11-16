@@ -139,11 +139,13 @@ tasks:
 - `accepted`：还须有 `accepted_at` 和用户明确的 `acceptance_evidence`。
 - `blocked_reason`：仅在存在阻塞时填写，解除时删除。
 
-状态只能 `todo → working → done → accepted`。不属于当前状态的字段和空列表省略。用户取消的任务直接删除，但仍被依赖的任务须先解除依赖；每次 `git commit` 前用 `clean-accepted` 删除全部 `accepted` 及其已满足依赖。
+状态只能 `todo → working → done → accepted`。不属于当前状态的字段和空列表省略。用户肯定对应成果后即可从 `done` 转为 `accepted`，并记录对应原话或事实作为验收依据；用户未肯定或未回应时保留 `done`，不得自动验收，`clean-accepted` 不清理它。用户准许提交时，提交前须把本次提交覆盖的 `done` 逐项转为 `accepted`，以用户准许提交的原话或事实作为验收依据，不得验收无关旧任务。用户取消的任务直接删除，但仍被依赖的任务须先解除依赖；每次 `git commit` 前用 `clean-accepted` 删除全部 `accepted` 及其已满足依赖。
+
+旧 `done` 按待确认队列维护。会话恢复时静默核对，提交前集中复核；有用户证据的补转 `accepted` 后清理，证据不足或仍待确认的保留，明确取消的删除。不得仅凭 Git 已提交、任务年龄或数量推断验收或删除。多项待处理时一次列出 ID、标题和完成时间，支持批量回答，不逐轮逐条追问。
 
 ## 6. 状态脚本命令
 
-修改命令在同一文件锁内读取、校验、修改、再次校验、原子替换并维护审计；校验命令只读且不写审计。审计按 `prepared → committed` 或 `prepared → failed` 记录，成功事件包含状态文件 SHA-256。超过 100 个完整操作时清理到最近 50 个，旧操作自动淘汰。任务日志位于项目根目录 `.agent-workflow-audit.jsonl`，要求日志位于会话目录 `requirements-audit.jsonl`。失败事件只写错误类型和脱敏类别，日志不保存原始异常文本、要求正文、源码或凭证；若状态已替换但审计写入或压缩失败，重试前须核对状态与日志。`clean-accepted` 和 `git commit` 不额外清空审计，保留或删除规则见 [paths.md](paths.md)。
+修改命令在同一文件锁内读取、校验、修改、再次校验、原子替换并维护审计；校验命令只读且不写审计。审计按 `prepared → committed` 或 `prepared → failed` 记录，成功事件包含状态文件 SHA-256。超过 100 个完整操作时清理到最近 50 个，旧操作自动淘汰。任务日志位于项目根目录 `.agent-workflow-audit.jsonl`，要求日志位于会话目录 `requirements-audit.jsonl`。项目待办初始化或写入时，只自动把 `.agent-workflow-audit.jsonl` 和 `..todos.yml.lock` 加入项目根 `.gitignore`，保留其他条目；森林与上下文扫描默认排除工作流审计和锁文件。失败事件只写错误类型和脱敏类别，日志不保存原始异常文本、要求正文、源码或凭证；若状态已替换但审计写入或压缩失败，重试前须核对状态与日志。`clean-accepted` 和 `git commit` 不额外清空审计，保留或删除规则见 [paths.md](paths.md)。
 
 ### 要求文件
 

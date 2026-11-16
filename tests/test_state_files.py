@@ -55,6 +55,60 @@ class StateTests(unittest.TestCase):
         result = self.run_state("todos", "init", "--file", self.todos)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_todos_writes_maintain_only_generated_gitignore_entries(self):
+        ignore = self.project / ".gitignore"
+        ignore.write_text(".venv/", encoding="utf-8")
+        self.init_todos()
+        expected = ".venv/\n.agent-workflow-audit.jsonl\n..todos.yml.lock\n"
+        self.assertEqual(ignore.read_text(encoding="utf-8"), expected)
+        first = ignore.read_bytes()
+        added = self.run_state(
+            "todos", "add", "--file", self.todos,
+            "--title", "保留任务", "--acceptance-criteria", "验证通过",
+        )
+        self.assertEqual(added.returncode, 0, added.stderr)
+        self.assertEqual(ignore.read_bytes(), first)
+        self.assertNotIn("*.lock", first.decode().splitlines())
+        self.assertNotIn("*.jsonl", first.decode().splitlines())
+        self.assertNotIn(".todos.yml", first.decode().splitlines())
+
+    def test_done_waits_for_user_affirmation_or_commit_permission(self):
+        self.init_todos()
+        added = self.run_state(
+            "todos", "add", "--file", self.todos,
+            "--title", "等待验收", "--acceptance-criteria", "验证通过",
+        )
+        self.assertEqual(added.returncode, 0, added.stderr)
+        working = self.run_state(
+            "todos", "transition", "--file", self.todos,
+            "--id", "TASK-001", "--to", "working", "--executor", "agent-a",
+        )
+        self.assertEqual(working.returncode, 0, working.stderr)
+        done = self.run_state(
+            "todos", "transition", "--file", self.todos,
+            "--id", "TASK-001", "--to", "done", "--verification", "测试通过",
+        )
+        self.assertEqual(done.returncode, 0, done.stderr)
+        cleaned = self.run_state("todos", "clean-accepted", "--file", self.todos)
+        self.assertEqual(cleaned.returncode, 0, cleaned.stderr)
+        data = load_yaml(self.todos)
+        self.assertEqual(data["tasks"][0]["status"], "done")
+        accepted = self.run_state(
+            "todos", "transition", "--file", self.todos,
+            "--id", "TASK-001", "--to", "accepted",
+        )
+        self.assertEqual(accepted.returncode, 1)
+        self.assertEqual(load_yaml(self.todos)["tasks"][0]["status"], "done")
+        permitted = self.run_state(
+            "todos", "transition", "--file", self.todos,
+            "--id", "TASK-001", "--to", "accepted",
+            "--acceptance-evidence", "用户准许提交本次成果",
+        )
+        self.assertEqual(permitted.returncode, 0, permitted.stderr)
+        cleaned = self.run_state("todos", "clean-accepted", "--file", self.todos)
+        self.assertEqual(cleaned.returncode, 0, cleaned.stderr)
+        self.assertEqual(load_yaml(self.todos)["tasks"], [])
+
     def test_requirements_lifecycle_binding_and_project_exclusion(self):
         inside = self.run_state(
             "requirements",

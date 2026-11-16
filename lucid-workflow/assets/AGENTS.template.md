@@ -42,13 +42,13 @@ Windows：
 
 ## 会话开始检查更新
 
-宿主加载本规则后、实质工作前，查询 `https://github.com/Keye3Tuido/lucid-workflow/releases/latest`：
+宿主加载本规则后、实质工作前，直接查询公开 API `https://api.github.com/repos/Keye3Tuido/lucid-workflow/releases/latest`，不调用 `gh`：
 
 ```bash
 python3 <共享Skill>/scripts/update_skill.py check
 ```
 
-`update_available: true` 时才执行 `apply`。更新器校验版本、资产地址和压缩包，保留旧目录备份；完成后重新加载 Skill，不把磁盘更新当作当前会话已经加载。查询优先使用已登录的 `gh`，无 `gh` 时使用公开 API；失败时使用当前版本并报告，不重复请求。
+`update_available: true` 时才执行 `apply`。更新器校验版本、资产地址和压缩包，保留旧目录备份；无更新或更新成功时不发送常规聊天提示，需要重新加载 Skill、复核模板或出现异常时明确说明。磁盘更新不视为当前会话已经加载。Skill 更新不自动覆盖共享 `AGENTS.md`，模板变化须按宿主规则复核接入。失败时使用当前版本，不重复请求。
 
 ## 每轮维护要求
 
@@ -73,10 +73,11 @@ python3 <共享Skill>/scripts/session_questions.py list --file <会话目录/que
 ## 维护任务
 
 1. 读取 `.todos.yml`，登记实际任务；无新任务不制造记录。
-2. 状态只能 `todo → working → done → accepted`。开工前进入 `working`，验证后进入 `done`，仅用户明确验收后进入 `accepted`。
+2. 状态只能 `todo → working → done → accepted`。开工前进入 `working`，验证后进入 `done`；用户肯定对应成果后即可进入 `accepted`，并记录对应原话或事实作为验收依据。用户未肯定或未回应时保留 `done`，不得自动验收，`clean-accepted` 不清理它。
 3. 开工前所有直接依赖必须为 `done` 或 `accepted`；拒绝循环依赖。仍被依赖的任务不得普通删除，`clean-accepted` 可清理已验收任务及其已满足依赖。
 4. 分别记录执行者与开始时间、完成时间与验证证据、验收时间与用户依据。阻塞原因独立记录。
-5. 用户取消的任务直接删除。每次 `git commit` 前删除全部 `accepted`，再校验 YAML 和森林；该操作不清空审计，审计保留或删除按 `<共享Skill>/references/paths.md` 的生命周期规则执行。
+5. 用户取消的任务直接删除。用户准许提交时，每次 `git commit` 前先把本次提交覆盖的 `done` 逐项转为 `accepted`，以用户准许提交的原话或事实作为验收依据，不得验收无关旧任务；再删除全部 `accepted`，校验 YAML 和森林。该操作不清空审计，审计保留或删除按 `<共享Skill>/references/paths.md` 的生命周期规则执行。
+6. 旧 `done` 是待确认队列，不是历史档案。会话恢复时静默核对，提交前集中复核：有用户肯定或准许提交证据的补转 `accepted` 后清理；仍待确认或证据不足的保留；明确取消的删除，仍被依赖时先处理依赖关系。不得仅凭 Git 已提交、任务年龄或数量推断验收或删除。需要用户处理多项时，一次列出 ID、标题和完成时间，支持批量回答，不逐轮逐条追问；数量和时间只用于提醒。
 
 状态写操作与审计共用同一文件锁，按 `prepared → committed` 或 `prepared → failed` 写入滚动 JSONL；超过 100 个完整操作时清理到最近 50 个，旧操作自动淘汰。纯读取和 `validate` 不写日志。任务审计位于项目根目录 `.agent-workflow-audit.jsonl`，要求审计位于会话目录 `requirements-audit.jsonl`。记录操作、执行者、会话、目标、状态迁移和成功时的状态 SHA-256；失败事件只写错误类型和脱敏类别，不记录原始异常文本、要求正文、源码或凭证。状态已替换但审计写入或压缩失败时，重试前核对状态与日志。
 
@@ -124,7 +125,7 @@ python3 scripts/forest_architecture.py --root <项目根目录> --path <模块�
 - 所有 Agent 遵循同一规则，不区分主、子 Agent 权限。
 - 共享 YAML 的读取、修改、写回全程加锁；同目录临时文件刷新后原子替换。原子替换不能替代锁。
 - 不使用 Hook，不声称提示词能硬性保证触发。
-- 不主动把 `.doc-forest/`、`.doc-forest.yml`、`.todos.yml` 加入 `.gitignore`、`.git/info/exclude` 等忽略规则；已有规则只报告，不擅改。不自动暂存或提交。
+- 项目待办初始化或写入时，默认把 `.agent-workflow-audit.jsonl` 和 `..todos.yml.lock` 加入项目根 `.gitignore`，保留其他条目；森林与上下文扫描默认排除工作流审计 JSONL 和状态锁。不主动把 `.doc-forest/`、`.doc-forest.yml`、`.todos.yml` 或其他现有文件加入 `.gitignore`、`.git/info/exclude` 等忽略规则；已有规则只报告，不擅改。不自动暂存或提交。
 - 行动和答复均以实际证据为准，执行后核验真实结果。
 
 ## 以读者为中心的信息表达

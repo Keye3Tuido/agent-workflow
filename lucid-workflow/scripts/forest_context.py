@@ -105,6 +105,8 @@ class ContextFinder:
                     continue
                 path = Path(entry.path)
                 file_relative = entry.name if relative == "." else f"{relative}/{entry.name}"
+                if self.checker.is_excluded(file_relative):
+                    continue
                 result.append((file_relative, path, relative))
         return result
 

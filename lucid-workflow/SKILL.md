@@ -17,7 +17,7 @@ description: Maintain session requirements, user questions, project todos, and .
 python3 <共享Skill>/scripts/update_skill.py check
 ```
 
-固定查询 `https://github.com/Keye3Tuido/lucid-workflow/releases/latest`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。更新后重新加载 Skill。Skill 更新不自动覆盖共享 `AGENTS.md`，模板变化须按宿主规则复核接入。查询优先使用已登录的 `gh`，无 `gh` 时使用公开 API；失败时使用当前版本并报告，不重复请求。
+固定查询公开 API `https://api.github.com/repos/Keye3Tuido/lucid-workflow/releases/latest`，不调用 `gh`。仅 `update_available: true` 时执行 `apply`；更新器校验资产并保留旧目录备份。无更新或更新成功时不发送常规聊天提示；需要重新加载 Skill、复核模板或出现异常时明确说明。磁盘更新不视为当前会话已加载。Skill 更新不自动覆盖共享 `AGENTS.md`，模板变化须按宿主规则复核接入。失败时使用当前版本，不重复请求。
 
 ## 恢复状态
 
@@ -68,7 +68,9 @@ python3 scripts/state_files.py todos clean-accepted --file <文件>
 
 默认要求为 `required + session`。禁止项、临时范围、任务 ID 和不同的原文引用按需添加。空字段和空列表省略。`requirements remove` 删除失效要求，`todos remove` 删除取消任务，`set-blocked`／`clear-blocked` 维护阻塞。修改后运行对应 `validate`。
 
-任务开工前，所有直接依赖必须为 `done` 或 `accepted`。循环依赖会使校验失败；仍被其他任务依赖时不得普通删除。`clean-accepted` 可清理已验收任务及其已满足依赖。
+任务开工前，所有直接依赖必须为 `done` 或 `accepted`。循环依赖会使校验失败；仍被其他任务依赖时不得普通删除。用户肯定对应成果后即可从 `done` 转为 `accepted`，并记录对应原话或事实作为验收依据；用户未肯定或未回应时保留 `done`，不得自动验收，`clean-accepted` 也不会清理它。
+
+旧 `done` 是待确认队列，不是历史档案。会话恢复时静默核对，提交前集中复核：已有用户肯定或准许提交证据的补转 `accepted` 后清理；仍待确认或证据不足的保留；用户明确取消的按 `todos remove` 删除，仍被依赖时先处理依赖关系。不得仅凭 Git 已提交、任务年龄或数量推断验收或删除。需要用户处理多项时，一次列出 ID、标题和完成时间，支持批量回答，不逐轮逐条追问；数量和时间只用于提醒。
 
 状态写命令与审计共用同一文件锁：写入前追加 `prepared`，成功后追加带状态 SHA-256 的 `committed`，失败追加 `failed`。超过 100 个完整操作时清理到最近 50 个，旧操作自动淘汰；纯读取和 `validate` 不写日志。项目任务日志为项目根目录的 `.agent-workflow-audit.jsonl`，会话要求日志为会话目录的 `requirements-audit.jsonl`。日志记录操作、执行者、会话、目标和状态迁移；失败事件只写错误类型和脱敏类别，不记录原始异常文本、要求正文、源码或凭证。任务执行者可由 `AGENT_WORKFLOW_SESSION_ID` 标识。若状态已替换但审计写入或压缩失败，命令会报错，重试前须核对状态与日志。
 
@@ -105,7 +107,7 @@ python3 scripts/check_doc_forest.py --root <项目根目录> --path <相对路�
 
 ## 提交前
 
-确认 `accepted` 均有用户验收依据，运行 `todos clean-accepted`，再校验状态和森林。该命令只清理已验收任务，不清空审计；审计在每次写入后滚动压缩，保留或删除规则见 [paths.md](references/paths.md)。不修改 Git 忽略规则，不自动暂存或提交。
+用户准许提交时，先把本次提交覆盖的 `done` 逐项转为 `accepted`，以用户准许提交的原话或事实作为验收依据，不得验收无关旧任务。确认 `accepted` 均有用户验收依据后，运行 `todos clean-accepted`，再校验状态和森林。该命令只清理已验收任务，不清空审计；审计在每次写入后滚动压缩，保留或删除规则见 [paths.md](references/paths.md)。项目待办写入仅自动维护 `.agent-workflow-audit.jsonl` 和 `..todos.yml.lock` 两个 `.gitignore` 条目，不改动其他忽略规则，不自动暂存或提交。
 
 ## 安装
 
