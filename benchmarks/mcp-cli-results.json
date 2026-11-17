@@ -1,0 +1,119 @@
+{
+  "config": {
+    "rounds": 3,
+    "tasks_per_round": 60,
+    "forest_files": 50,
+    "warm_queries_per_round": 30
+  },
+  "environment": {
+    "python": "3.12.16",
+    "mcp_sdk": "2.3.0",
+    "protocol": "2026-07-28"
+  },
+  "service": {
+    "startup": {
+      "median_seconds": 0.46748491702601314,
+      "mean_seconds": 0.46748491702601314,
+      "p95_seconds": 0.46748491702601314,
+      "min_seconds": 0.46748491702601314,
+      "max_seconds": 0.46748491702601314
+    },
+    "client_setup": {
+      "median_seconds": 0.001827457919716835,
+      "mean_seconds": 0.002259319182485342,
+      "p95_seconds": 0.0031592906452715397,
+      "min_seconds": 0.0017912089824676514,
+      "max_seconds": 0.0031592906452715397
+    },
+    "initial_rss_mib": 73.328125,
+    "final_rss_mib": 74.46875
+  },
+  "cli": {
+    "add": {
+      "median_seconds": 0.047067583072930574,
+      "mean_seconds": 0.04686801918627073,
+      "p95_seconds": 0.058371749706566334,
+      "min_seconds": 0.03342925012111664,
+      "max_seconds": 0.06441441690549254
+    },
+    "claim": {
+      "median_seconds": 0.05728652095422149,
+      "mean_seconds": 0.05755659264201919,
+      "p95_seconds": 0.07839112496003509,
+      "min_seconds": 0.0338190421462059,
+      "max_seconds": 0.08927574986591935
+    },
+    "complete": {
+      "median_seconds": 0.05809491663239896,
+      "mean_seconds": 0.057345944862916234,
+      "p95_seconds": 0.0775168752297759,
+      "min_seconds": 0.033860291820019484,
+      "max_seconds": 0.08126266719773412
+    },
+    "total": {
+      "median_seconds": 9.749693125020713,
+      "mean_seconds": 9.741214805282652,
+      "p95_seconds": 9.79697358282283,
+      "min_seconds": 9.676977708004415,
+      "max_seconds": 9.79697358282283
+    },
+    "cold": {
+      "median_seconds": 0.048767083790153265,
+      "mean_seconds": 0.050246736189971365,
+      "p95_seconds": 0.05395508278161287,
+      "min_seconds": 0.048018041998147964,
+      "max_seconds": 0.05395508278161287
+    },
+    "warm": {
+      "median_seconds": 0.03760241693817079,
+      "mean_seconds": 0.038100716228493384,
+      "p95_seconds": 0.04101779218763113,
+      "min_seconds": 0.036746874917298555,
+      "max_seconds": 0.05086737498641014
+    }
+  },
+  "mcp": {
+    "add": {
+      "median_seconds": 0.0013622082769870758,
+      "mean_seconds": 0.001538322933225168,
+      "p95_seconds": 0.0017310408875346184,
+      "min_seconds": 0.0011639161966741085,
+      "max_seconds": 0.019898749887943268
+    },
+    "claim": {
+      "median_seconds": 0.0013503334484994411,
+      "mean_seconds": 0.0014161557812864582,
+      "p95_seconds": 0.0017210831865668297,
+      "min_seconds": 0.0011292090639472008,
+      "max_seconds": 0.002832958009094
+    },
+    "complete": {
+      "median_seconds": 0.0013144786935299635,
+      "mean_seconds": 0.0013805027663086852,
+      "p95_seconds": 0.0017478750087320805,
+      "min_seconds": 0.0011147079057991505,
+      "max_seconds": 0.0019649588502943516
+    },
+    "total": {
+      "median_seconds": 0.2607500832527876,
+      "mean_seconds": 0.2601146528807779,
+      "p95_seconds": 0.2663953332230449,
+      "min_seconds": 0.2531985421665013,
+      "max_seconds": 0.2663953332230449
+    },
+    "cold": {
+      "median_seconds": 0.016140250023454428,
+      "mean_seconds": 0.018516971884916227,
+      "p95_seconds": 0.023883040994405746,
+      "min_seconds": 0.015527624636888504,
+      "max_seconds": 0.023883040994405746
+    },
+    "warm": {
+      "median_seconds": 0.005081249866634607,
+      "mean_seconds": 0.005156010585940547,
+      "p95_seconds": 0.00567962508648634,
+      "min_seconds": 0.004643207881599665,
+      "max_seconds": 0.011229374911636114
+    }
+  }
+}

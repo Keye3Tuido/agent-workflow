@@ -152,6 +152,26 @@ class PackageTests(unittest.TestCase):
         self.assertIn("当前职责与边界", guidance)
         self.assertNotIn("通用 14 章", guidance)
 
+    def test_default_mcp_service_files_and_mode_isolation(self):
+        for relative in (
+            "scripts/coordination/core.py",
+            "scripts/coordination/mcp_server.py",
+            "scripts/coordination/service_process.py",
+            "scripts/coordination/service_control.py",
+            "scripts/coordination/install_mcp.py",
+            "scripts/coordination/requirements.txt",
+            "references/mcp-service.md",
+            "references/mcp-validation.md",
+        ):
+            self.assertTrue((SKILL / relative).is_file(), relative)
+        requirements = (SKILL / "scripts/coordination/requirements.txt").read_text(encoding="utf-8")
+        self.assertIn("mcp==2.3.0", requirements)
+        self.assertIn("PyYAML==6.0.3", requirements)
+        guide = (SKILL / "references/mcp-service.md").read_text(encoding="utf-8")
+        self.assertIn("禁止在线混写", guide)
+        self.assertIn("不得自动改用 CLI", guide)
+        self.assertIn("默认 MCP 模式", (SKILL / "assets/AGENTS.template.md").read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

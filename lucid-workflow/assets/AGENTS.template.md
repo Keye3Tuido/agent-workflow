@@ -50,6 +50,12 @@ python3 <共享Skill>/scripts/update_skill.py check
 
 `update_available: true` 时才执行 `apply`。更新器校验版本、资产地址和压缩包，保留旧目录备份；无更新或更新成功时不发送常规聊天提示，需要重新加载 Skill、复核模板或出现异常时明确说明。磁盘更新不视为当前会话已经加载。Skill 更新不自动覆盖共享 `AGENTS.md`，模板变化须按宿主规则复核接入。失败时使用当前版本，不重复请求。
 
+## 默认 MCP 模式
+
+新项目和明确迁移的项目默认使用 MCP，详细规则见 `<共享Skill>/references/mcp-service.md`。宿主尚未配置时应明确提示一次性接入，不得静默改用 CLI 写入。服务启动、保活、停止和更新由宿主或系统服务负责，Agent 不执行服务启动脚本。会话恢复时调用 `workflow.bootstrap`，正常协调使用 MCP 工具，答复或提交前调用 `workflow.checkpoint`。
+
+既有 CLI 项目不自动迁移。服务不可用时不得自动改用 CLI 写入另一套状态；只读查询可降级，写入失败应报告。禁止自动合并两种模式的状态。
+
 ## 每轮维护要求
 
 1. 收到消息后、实质处理前读取 `requirements.yml` 和 `questions.yml`。使用宿主会话目录或 `AGENT_WORKFLOW_SESSION_DIR`，核对会话 ID 和项目根目录。
