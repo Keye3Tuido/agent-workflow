@@ -123,6 +123,7 @@ python3 scripts/forest_architecture.py --root <项目根目录> --path <模块�
 - 目录或文件都可作为功能模块，按需添加 `boundary`、`entry`、`depends_on`。只记录直接架构依赖及原因，不记录模块内部调用、反向或传递依赖；`kind` 默认 `call`，可选 `config`、`data`、`event`。
 - `directories` 完整列出有效直接子目录，但只写 `name`；子目录说明保存在其自身 `info.yml`，不在父级重复。
 - 默认省略空列表和默认值。仅在需要停止递归时写 `recurse: false`：保留当前节点、停止镜像后代，且该节点不列下级目录。
+- 森林深度随维护调整：模块边界稳定且任务需要时逐步展开；职责合并或子级说明失去独立价值时折叠。折叠保留当前节点摘要并清理后代镜像，展开补齐子级说明，不按理解程度或时间自动膨胀。
 - `forest.allowlist` 非空时仅保留目标、后代和必要祖先；`forest.excluded_paths` 整棵排除且优先。依赖、Git 和构建目录按配置处理。
 - 不跟随目录符号链接；局部检查须解析祖先规则，不得误报主动裁剪的后代。
 - `requirements` 默认 `required + session`，`todos` 的空字段和空列表省略，状态字段按实际需要出现。

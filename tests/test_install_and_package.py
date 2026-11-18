@@ -150,6 +150,8 @@ class PackageTests(unittest.TestCase):
         guidance = (SKILL / "references" / "content-guidance.md").read_text(encoding="utf-8")
         self.assertIn("输入输出", guidance)
         self.assertIn("当前职责与边界", guidance)
+        self.assertIn("深化与折叠", guidance)
+        self.assertIn("森林深度随维护调整", text)
         self.assertNotIn("通用 14 章", guidance)
 
     def test_default_mcp_service_files_and_mode_isolation(self):

@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -143,6 +144,38 @@ class ForestTests(unittest.TestCase):
         self.write_info("generated", [directory_entry("cache")])
         invalid = check_forest(self.root)
         self.assertIn("invalid_info", self.codes(invalid))
+
+    def test_depth_can_expand_and_fold_during_maintenance(self):
+        (self.root / "src" / "feature" / "core").mkdir(parents=True)
+        (self.root / "src" / "feature" / "util").mkdir()
+        self.write_info(".", [directory_entry("src")])
+        self.write_info("src", [directory_entry("feature", recurse=False)])
+        self.write_info("src/feature")
+        folded = check_forest(self.root)
+        self.assertTrue(folded["valid"], folded["findings"])
+        self.assertEqual(folded["checked_directories"], [".", "src", "src/feature"])
+
+        self.write_info("src", [directory_entry("feature")])
+        self.write_info(
+            "src/feature",
+            [directory_entry("core"), directory_entry("util")],
+        )
+        self.write_info("src/feature/core")
+        self.write_info("src/feature/util")
+        expanded = check_forest(self.root)
+        self.assertTrue(expanded["valid"], expanded["findings"])
+        self.assertEqual(
+            set(expanded["checked_directories"]),
+            {".", "src", "src/feature", "src/feature/core", "src/feature/util"},
+        )
+
+        self.write_info("src", [directory_entry("feature", recurse=False)])
+        shutil.rmtree(self.forest / "src" / "feature" / "core")
+        shutil.rmtree(self.forest / "src" / "feature" / "util")
+        self.write_info("src/feature")
+        refolded = check_forest(self.root)
+        self.assertTrue(refolded["valid"], refolded["findings"])
+        self.assertEqual(refolded["checked_directories"], [".", "src", "src/feature"])
 
     def test_partial_check_covers_path_and_ancestors_only(self):
         (self.root / "src" / "a").mkdir(parents=True)

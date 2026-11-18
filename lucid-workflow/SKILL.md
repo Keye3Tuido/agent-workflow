@@ -113,6 +113,8 @@ python3 scripts/check_doc_forest.py --root <项目根目录> --path <相对路�
 
 `info.yml` 的目录路径由位置推导；子目录说明只存于其自身文件，父级只写 `name`。空列表和默认值省略，仅在停止递归时写 `recurse: false`。`.doc-forest` 永远排除；默认排除 `.git`、`node_modules`、`.venv`、`venv`，其他目录须明确配置。
 
+森林深度随维护调整：模块边界稳定且任务需要时逐步展开；职责合并或子级说明失去独立价值时折叠。折叠保留当前节点摘要并清理后代镜像，展开补齐子级说明，不按理解程度或时间自动膨胀。具体维护方式见 [content-guidance.md](references/content-guidance.md)。
+
 ## 提交前
 
 用户准许提交时，先把本次提交覆盖的 `done` 逐项转为 `accepted`，以用户准许提交的原话或事实作为验收依据，不得验收无关旧任务。确认 `accepted` 均有用户验收依据后，运行 `todos clean-accepted`，再校验状态和森林。该命令只清理已验收任务，不清空审计；审计在每次写入后滚动压缩，保留或删除规则见 [paths.md](references/paths.md)。项目待办写入仅自动维护 `.agent-workflow-audit.jsonl` 和 `..todos.yml.lock` 两个 `.gitignore` 条目，不改动其他忽略规则，不自动暂存或提交。
